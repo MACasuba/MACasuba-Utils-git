@@ -1,0 +1,23 @@
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:13:9: error: #import expects "FILENAME" or <FILENAME>
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:15: error: no declaration of property 'currentSession' found in the interface
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:16: error: no declaration of property 'txtMessage' found in the interface
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:17: error: no declaration of property 'connect' found in the interface
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:18: error: no declaration of property 'disconnect' found in the interface
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:19: error: expected constructor, destructor, or type conversion before '*' token
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m: In function 'void -[BluetoothViewController viewDidLoad](BluetoothViewController*, objc_selector*)':
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:22: error: 'connect' was not declared in this scope
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:23: error: 'disconnect' was not declared in this scope
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:24: warning: 'NSObject' may not respond to '-viewDidLoad'
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:24: warning: (Messages without a matching method signature
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:24: warning: will be assumed to return 'id' and accept
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:24: warning: '...' as arguments.)
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m: In function 'void -[BluetoothViewController dealloc](BluetoothViewController*, objc_selector*)':
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:27: error: 'txtMessage' was not declared in this scope
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:28: error: 'currentSession' was not declared in this scope
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m: At global scope:
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:32: error: expected type-specifier before 'GKPeerPickerController'
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:32: error: expected `)' before 'GKPeerPickerController'
+/Users/admin/Desktop/MACasuba-Utils-mem4/Utilities/helloWorld/Classes/BluetoothViewController.m:32: internal compiler error: tree check: expected class 'type', have 'exceptional' (error_mark) in objc_push_parm, at objc/objc-act.c:18143
+Please submit a full bug report,
+with preprocessed source if appropriate.
+See <URL:http://developer.apple.com/bugreporter> for instructions.
