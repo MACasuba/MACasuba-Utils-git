@@ -14,6 +14,7 @@
 #import "NetworkMainMenu.h"
 #import "HardwareMainMenu.h"
 #import "MemoryMainMenu.h"
+#import "PowerMainMenu.h"
 
 //na oke build onderstaande weer actief gemaakt, wellicht is muziek een item om te testen
 #import "BRMediaPlayer.h"
@@ -46,6 +47,10 @@
 	[categoryList addObject:[BRApplianceCategory categoryWithName:MEMORY_CATEGORY_NAME 
 													   identifier:MEMORY_ID 
 												   preferredOrder:MEMORY_PREFERRED_ORDER]];	
+	
+	[categoryList addObject:[BRApplianceCategory categoryWithName:POWER_CATEGORY_NAME 
+													   identifier:POWER_ID 
+												   preferredOrder:POWER_PREFERRED_ORDER]];	
 	return [NSArray arrayWithArray:[categoryList autorelease]];
 }
 
@@ -103,7 +108,7 @@
 		controller 	= [BRAlertController alertOfType:2 
 											  titled:@"About & Credits" 
 										 primaryText:@"ATV2_Utils" 
-									   secondaryText:@"ATV2_Utils was created by MACasuba of atvHelloWorld by Michael Gile."];
+									   secondaryText:@"created by MACasuba - www.iMHo.nu"];
 	}
 	else if ([identifier isEqualToString:SOFTWARE_ID]) {
 		controller	= [[[SoftwareMainMenu alloc] init] autorelease];
@@ -116,7 +121,10 @@
 	}	
 	else if ([identifier isEqualToString:MEMORY_ID]) {
 		controller	= [[[MemoryMainMenu alloc] init] autorelease];
-	}		
+	}	
+	else if ([identifier isEqualToString:POWER_ID]) {
+		controller	= [[[PowerMainMenu alloc] init] autorelease];
+	}	
 	return controller;
 }
 

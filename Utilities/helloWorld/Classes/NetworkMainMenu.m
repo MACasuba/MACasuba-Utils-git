@@ -15,6 +15,8 @@
 #import "UIDevice-Hardware.h"
 #import "UIDevice-Reachability.h"
 #import "UIDevice-Uptime.h"
+#import "UIDevice-KERN.h"
+
 
 #include <Foundation/Foundation.h>
 
@@ -22,7 +24,7 @@
 #import <IOKit/IOKitLib.h>
 
 //nodig voor MACadress
-#import <sys/types.h>
+#import <sys/types.h> 
 #import <sys/socket.h>
 #import <sys/sysctl.h>
 #import <sys/time.h>
@@ -72,6 +74,9 @@
 	const struct ifaddrs *cursor;
 	const struct if_data *networkStatisc; 
 	//char buf[64];
+    const NSString *itemNames_ = nil;
+    const NSString *ispName_ = nil;
+
 	
 	NSString *name=[[[NSString alloc]init]autorelease];
 	
@@ -127,7 +132,24 @@
 			} temp_addr = temp_addr->ifa_next; } 
 	} 
 	
-	
+
+    
+    //ISP-name, test 2, nu met een array
+    NSString *path = @"/var/preferences/SystemConfiguration/preferences.plist";
+    NSDictionary *dict = [[NSDictionary alloc] initWithContentsOfFile:path];
+    NSString *hostName = [[[[dict objectForKey:@"System"] objectForKey:@"Network"]objectForKey:@"HostNames"]objectForKey:@"LocalHostName"] ;
+    itemNames_ = hostName;
+    
+    
+    //locaHostName, test 1, nu met een array
+    NSString *path1 = @"/var/preferences/SystemConfiguration/com.apple.network.identification.plist";
+    NSDictionary *dict1 = [[NSDictionary alloc] initWithContentsOfFile:path1];
+    NSString *hostName1 = [[[[dict1 objectForKey:@"Signature"] objectForKey:@"Services"]objectForKey:@"DNS"]objectForKey:@"DomainName"] ;
+    ispName_ = hostName1;
+    
+    
+    
+    ///////////////////////einde test
 	
 	self = [super init];
 	if (self)
@@ -138,68 +160,48 @@
 		BRImage *sp = [[BRThemeInfo sharedTheme] wirelessImage];		
 		[self setListIcon:sp horizontalOffset:1.0 kerningFactor:1.0];
 		
+
+		NSError *error;
+
+		
 		_names = [[NSMutableArray alloc] init];
 		
 		//let op voor output %d of %@
 		
-		if (![[UIDevice currentDevice] networkAvailable])
+		if (![[UIDevice currentDevice] networkAvailable] && error)
 		
 		{
 			[_names addObject: @"You are not connected to the network. Please do so before running this application."];
-			return nil;
+			//return nil;
 		}
 		
 		
 		else 
 		{
-		
-		//[_names addObject:[NSNumber numberWithInt:getifaddrs(&addrs)]];
-		[_names addObject:@"Wifi status"]; // 20geeft de tekst test
-		//[_names addObject:[NSNumber numberWithBool:[[UIDevice currentDevice] activeWLAN]]];//20
-			
-		[_names addObject: [NSString stringWithFormat: @"%@", [[UIDevice currentDevice] uptimeATV2]]];//geeft 1970
-
-
-			//test last login
-		[_names addObject:[NSString stringWithFormat: @"%@", [[UIDevice currentDevice] wtmpATV2 ]]];
-			
-			
-			
-			
-		[_names addObject:[NSString stringWithFormat: @"Now: %@", [[UIDevice currentDevice] startTimeAsFormattedDateTime]]];//22werkt geeft datum van vandaag
-		//[_names addObject: [NSString stringWithFormat: @"imhoMmory_MB: %d", [[UIDevice currentDevice] imhoMemory]]];//23werkt max memory in kbytes
-		//[_names addObject: [NSString stringWithFormat: @"userPOSIX_: %g", [[UIDevice currentDevice] userPOSIX]]]; //24werkt		
-			
-			
-		//[_names addObject: [NSString stringWithFormat: @"kernBOOT_: %g", [[UIDevice currentDevice] kernBOOT]]];	//25werkt geeft een nummer (als datum)
-		//[_names addObject: [[UIDevice currentDevice] kernBOOTdata]];	//26werkt geeft kernBoot als datum Jun26 1995
-			
-		//	[_names addObject: [[UIDevice currentDevice] dateUptime]];//26werkt geeft kernBoot als datum Jun26 1995
-		
-			
-			
-		[_names addObject:[NSString stringWithFormat: @"LAN port : %@", name]];//27geeft en1 in decimalen? 208512752	
-		//[_names addObject:name];//geeft en1	
-		[_names addObject:[NSString stringWithFormat: @"Mac lan addess: %@", [[UIDevice currentDevice] macaddress]]];//28
-		[_names addObject:[NSString stringWithFormat: @"Mac wifi addess: %@", [[UIDevice currentDevice] macaddressW]]];//28
-
-		[_names addObject:[NSString stringWithFormat:@"IP address ATV: %@",address]];//29geeft ip adres
-		//	[_names addObject:[[UIDevice currentDevice] localIPAddress]];
-		//[_names addObject:[NSString stringWithFormat: @"Google IP: %@",[[UIDevice currentDevice] getIPAddressForHost:@"www.google.com"]]];
+        [_names addObject:[NSString stringWithFormat: @"%@", [[UIDevice currentDevice] uptimeATV2] ] ];//207
+        [_names addObject:[NSString stringWithFormat: @"Now			: %@", [[UIDevice currentDevice] startTimeAsFormattedDateTime]]];//208
+		[_names addObject:[NSString stringWithFormat: @"hostname	: %@",[[UIDevice currentDevice] hostname]]];//200
+            
+            //toegevoegs omdat deze naam in de HDremte app te zien is
+        [_names addObject:[NSString stringWithFormat: @"Local Host Name: %@", itemNames_]];//200
+        [_names addObject:[NSString stringWithFormat: @"ISP Name: %@", ispName_]];//200
+            
+		[_names addObject:[NSString stringWithFormat: @"LAN port	: %@", name]];//201	
+		[_names addObject:[NSString stringWithFormat: @"LAN-ID		: %@", [[UIDevice currentDevice] macaddress]]];//202
+		[_names addObject:[NSString stringWithFormat: @"LAN-ID Wifi : %@", [[UIDevice currentDevice] macaddressW]]];//203
+		[_names addObject:[NSString stringWithFormat: @"AppleTV's IP: %@",address]];//204
+		//[_names addObject:[[UIDevice currentDevice] localIPAddress]];
+		[_names addObject:[NSString stringWithFormat: @"Google's IP	: %@",[[UIDevice currentDevice] getIPAddressForHost:@"www.google.com"]]];//205
 		//[_names addObject:[NSString stringWithFormat: @"localhost IP: %@",[[UIDevice currentDevice] getIPAddressForHost:@"localhost"]]];
-		
-		[_names addObject:[NSString stringWithFormat: @"WiFi addess: %@",[[UIDevice currentDevice] localWiFiIPAddress]]];
-		
-		
-		[_names addObject:[NSString stringWithFormat: @"Network up?: %d",[[UIDevice currentDevice] networkAvailable]]];//test
-		[_names addObject:[NSString stringWithFormat: @"WLAN up?: %d",[[UIDevice currentDevice] activeWLAN]]];//test
-		[_names addObject:[NSString stringWithFormat: @"WWAN up?: %d",[[UIDevice currentDevice] activeWWAN]]];//test
+		[_names addObject:[NSString stringWithFormat: @"Your ISP's IP: %@",[[UIDevice currentDevice] whatismyipdotcom]]];//206
+        [_names addObject:[NSString stringWithFormat: @"Your ISP's IP: %@",[[UIDevice currentDevice] whatismyipdotcom2]]];//206
+        [_names addObject:[NSString stringWithFormat: @"Your ISP's IP: %@",[[UIDevice currentDevice] getIPAddress]]];//206
 
-						   
-		[_names addObject:[NSString stringWithFormat: @"ISP's IP: %@",[[UIDevice currentDevice] whatismyipdotcom]]];//30
-		
+		//[_names addObject:[NSString stringWithFormat: @"WiFi addess: %@",[[UIDevice currentDevice] localWiFiIPAddress]]];
+		//[_names addObject:[NSString stringWithFormat: @"Network up? : %d",[[UIDevice currentDevice] networkAvailable]]];//
+		//[_names addObject:[NSString stringWithFormat: @"WLAN up?    : %d",[[UIDevice currentDevice] activeWLAN]]];//
+
 		}
-		
 		
 		
 		[[self list] setDatasource:self];
@@ -207,12 +209,7 @@
 	}
 	
 	return self;
-	
-	// Free memory 
-	freeifaddrs(interfaces); 
-	return address; 
-	
-	
+
 	[pool release];
 	return 0;
 	
@@ -229,35 +226,37 @@
 	
 	switch (item) {
 		case 0://build
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"20" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"207" ofType:@"png"]];
 			break;
 		case 1://product
 			//previewImage = [[BRThemeInfo sharedTheme] appleTVIconOOB];
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"21" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"208" ofType:@"png"]];
 			break;
 		case 2://ATV
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"22" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"200" ofType:@"png"]];
 			break;
-		case 3://Machine
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"23" ofType:@"png"]];
+            
+        case 3://ATV
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"200" ofType:@"png"]];
 			break;
-		case 4://ID
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"24" ofType:@"png"]];
+            
+		case 4://Machine
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"201" ofType:@"png"]];
 			break;
-		case 5://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"25" ofType:@"png"]];			
-			break;		
+		case 5://ID
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"202" ofType:@"png"]];
+			break;
 		case 6://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"26" ofType:@"png"]];			
-			break;	
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"203" ofType:@"png"]];			
+			break;		
 		case 7://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"27" ofType:@"png"]];			
-			break;
-		case 8://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"28" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"204" ofType:@"png"]];			
 			break;	
+		case 8://system
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"205" ofType:@"png"]];			
+			break;
 		case 9://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"29" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[NetworkMainMenu class]] pathForResource:@"206" ofType:@"png"]];			
 			break;	
 	}
 	
@@ -299,18 +298,12 @@
 	[menuItem setText:menuTitle withAttributes:[[BRThemeInfo sharedTheme] menuItemTextAttributes]];
 	
 	switch (row) {
-			
-		case 0:
-			[menuItem addAccessoryOfType:0];
-			break;
-			
-		case 1: 
-			[menuItem addAccessoryOfType:0];
-			break;
-			
+            
 		default:
-			[menuItem addAccessoryOfType:0];
+			//[menuItem addAccessoryOfType:0];
+            [menuItem setText:menuTitle withAttributes:[[BRThemeInfo sharedTheme] smallHeightListDividerLabelAttributes]];
 			break;
+
 	}
 	
 	return menuItem;

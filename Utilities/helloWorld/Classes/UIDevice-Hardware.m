@@ -16,12 +16,32 @@
 // Thanks to Emanuele Vulcano, Kevin Ballard/Eridius, Ryandjohnson, Matt Brown, etc.
 
 
-#include <sys/socket.h> // Per msqr
-#include <sys/sysctl.h>
+#include <sys/socket.h> // definitions for second level network identifiers
+#include <sys/sysctl.h> //definitions for top level identifiers, second level kernel and hardware identi-fiers, identifiers, and user level identifiers
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
+#include <sys/param.h>
+
+#import <sys/types.h> 
+
+
+#import <netinet/in.h>
+#import <net/if_dl.h>
+#import <netdb.h>
+#import <arpa/inet.h>
+//#import <unistd.hv> //onvindbaar
+#import <ifaddrs.h>
+
+#import <Foundation/NSObject.h> //tbv file info
+#import <Foundation/NSFileManager.h>  
+#import <Foundation/NSAutoreleasePool.h>
+#import <Foundation/NSData.h>
+#import <Foundation/NSURL.h>
+
+#include <sys/param.h>  //tbv disk info
+#include <sys/mount.h>  
 
 #include <time.h> //tbv uptime
 #include <errno.h>
@@ -29,41 +49,11 @@
 #import "UIDevice-Hardware.h"
 
 
-
 @implementation UIDevice (Hardware)
-/*
- Platforms
- iFPGA -> ??
- 
- iPhone1,1 -> iPhone 1G, M68
- iPhone1,2 -> iPhone 3G, N82
- iPhone2,1 -> iPhone 3GS, N88
- iPhone3,1 -> iPhone 4/AT&T, N89
- iPhone3,2 -> iPhone 4/Other Carrier?, ??
- iPhone3,3 -> iPhone 4/Verizon, TBD
- iPhone4,1 -> (iPhone 5/AT&T), TBD
- iPhone4,2 -> (iPhone 5/Verizon), TBD
- 
- iPod1,1 -> iPod touch 1G, N45
- iPod2,1 -> iPod touch 2G, N72
- iPod2,2 -> Unknown, ??
- iPod3,1 -> iPod touch 3G, N18
- iPod4,1 -> iPod touch 4G, N80
- // Thanks NSForge
- iPad1,1 -> iPad 1G, WiFi and 3G, K48
- iPad2,1 -> iPad 2G, WiFi, K93
- iPad2,2 -> iPad 2G, GSM 3G, K94
- iPad2,3 -> iPad 2G, CDMA 3G, K95
- iPad3,1 -> (iPad 3G, GSM)
- iPad3,2 -> (iPad 3G, CDMA)
- 
- AppleTV2,1 -> AppleTV 2, K66
- 
- i386, x86_64 -> iPhone Simulator
- */
 
 
 #pragma mark sysctlbyname utils
+
 - (NSString *) getSysInfoByName:(char *)typeSpecifier
 {
     size_t size;
@@ -78,12 +68,6 @@
     return results;
 }
 
-//- (NSString *) platform
-//{
-//    return [self getSysInfoByName:"hw.machine"];
-//}
-
-
 - (NSString *) platform
 {
     size_t size;
@@ -92,16 +76,9 @@
     sysctlbyname("hw.machine", machine, &size, NULL, 0);
     NSString *platform = [NSString stringWithCString:machine encoding:NSUTF8StringEncoding];
     free(machine);
+
     return platform;
 }
-
-
-// Thanks, Tom Harrington (Atomicbird)
-//- (NSString *) hwmodel
-//{
-//    return [self getSysInfoByName:"hw.model"];
-//}
-
 
 - (NSString *) hwmodel
 {
@@ -114,133 +91,105 @@
     return hwmodel;
 }
 
-
-
-#pragma mark sysctl utils
-- (NSUInteger) getSysInfo: (uint) typeSpecifier
-{
-    size_t size = sizeof(int);
-    int results;
-    int mib[2] = {CTL_HW, typeSpecifier};
-    sysctl(mib, 2, &results, &size, NULL, 0);
-    return (NSUInteger) results;
-}
-
-- (NSUInteger) cpuFrequency
-{
-    return [self getSysInfo:HW_CPU_FREQ];
-}
-
-- (NSUInteger) busFrequency
-{
-    return [self getSysInfo:HW_BUS_FREQ];
-}
-
-- (NSUInteger) totalMemory
-{
-    return (([self getSysInfo:HW_PHYSMEM]/1024.0f)/1024.0f);
-	// / 1024 geeft MB's
-}
-
-
-- (NSUInteger) userMemory
-{
-    return (([self getSysInfo:HW_USERMEM]/1024)/1024);
-}
-
-//toegevoegd als test The number of bytes of physical memory in the system
-- (NSUInteger) imhoMemory
-{
-    return (([self getSysInfo:HW_MEMSIZE]/1024)/1024); /* uint64_t: physical ram size */
-}
-
-
-- (NSUInteger) maxSocketBufferSize
-{
-    return (([self getSysInfo:KIPC_MAXSOCKBUF]/1024.0f)/1024.0f);
-}
-
-
-
-// var test voor USER_POSIX2_UPE 
-- (NSUInteger) userPOSIX
-{
-    return [self getSysInfo:USER_POSIX2_UPE];
-}
-
-// test voor KERN_BOOTTIME
-- (NSUInteger) kernBOOT
-{
-    return [self getSysInfo:KERN_BOOTTIME];/* struct: time kernel was booted */
-}
-
-
-//test kernboot omzetten naar date format
-- (NSString*) kernBOOTdata
-{	
-	NSUInteger testMe =  [self getSysInfo:KERN_BOOTTIME];/* struct: time kernel was booted */
-	
-	
-NSDateFormatter *dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
-[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
-[dateFormatter setTimeStyle:NSDateFormatterMediumStyle];
-NSDate *date = [NSDate dateWithTimeIntervalSince1970:testMe];
-
-	    return [dateFormatter stringFromDate:date];
-//NSString *dateUptime = [dateFormatter stringFromDate:date];
-
-}
-
-
-//
-/*
-
- Jun  3 16:30:43 Apple-TV /Applications/AppleTV.app/AppleTV[125]: Serial Number:DCYF8DJ2DDR5\n*** OS 8C154, IR 01.28, iBoot 931.71.16, SW 4.1.1 / 1553 ***\n*** OS   partition size/free:786432000/266895360 ***\n*** data partition size/free:7130374144/699334656 ***\n*** AVF main repository size:5519761408 ***\n*** AVF secondary repository size:209715200 ***\n*** Current Date:6/3/12 4:30 PM ***\n*** Time Zone:US/Pacific ***
- Jun  3 16:30:43 Apple-TV AppleTV[125]: localHostName: Apple-TV-2
- Jun  3 16:30:44 Apple-TV AppleTV[125]: reachObserverForHost: NSConcreteNotification 0x4e0c60 {name = CPNetworkObserverHostnameReachableNotification; userInfo = {\n    CPNetworkObserverHostname = "Apple-TV-2";\n    CPNetworkObserverReachable = 1;\n    CPNetworkObserverReachableFlags = <02000100>;\n}}
- 
- 
- 
- 
- */
-//
-
-
-
 #pragma mark file system -- Thanks Joachim Bean!
-
-
-//see to get those /dev/disk0s1s1 == '/' and /dev/disk0s1s2 == '/private/var'   
-
 
 - (NSNumber *) totalDiskSpace
 {
-//    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-    
-//}
-
-//test
-NSDictionary * fsAttributes = [ [NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
-//NSString *sizeInGB = [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824];
-
-//NSString *sizeInGB = [NSString stringWithFormat:@"\n\n %.2f GB",[totalSize floatValue] / 1024];	
-//test	
-	
-//return [NSString stringWithFormat:@"total_FS_GB: ", sizeInGB ];
-	return [NSString stringWithFormat:@"GB: %@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824] ];
-
-//return [fattributes objectForKey:NSFileSystemSize];
-
+	NSDictionary * fsAttributes = [ [NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
+	NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824] ];
 }
-
-
 
 - (NSNumber *) freeDiskSpace
 {
     NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-   // return [fattributes objectForKey:NSFileSystemFreeSize];
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemFreeSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824] ];
+}
+
+- (NSNumber *) freeDiskSpacePct
+{
+    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
+	// return [fattributes objectForKey:NSFileSystemFreeSize];//original output wo format
 	
+	// Create formatter
+	NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init]; 
+	
+	NSString *formattedOutput = [formatter stringFromNumber:[fattributes objectForKey:NSFileSystemFreeSize]];
+	
+	//--------------------------------------------
+	// Format style as percentage, output to console
+	//--------------------------------------------
+	[formatter setNumberStyle:NSNumberFormatterPercentStyle];
+	// Set to the current locale
+	[formatter setLocale:[NSLocale currentLocale]];
+	// Get percentage of system space that is available
+	float percent = [[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / [[fattributes objectForKey:NSFileSystemSize] floatValue];
+	NSNumber *num = [NSNumber numberWithFloat:percent];
+	formattedOutput = [formatter stringFromNumber:num];
+	return [NSString stringWithFormat:@"percent free: %@",[formatter stringFromNumber:num]]; 
+}
+
+//--------------------------------------------
+// / is the mount point for /dev/disk0s1s1
+//--------------------------------------------
+
+- (NSNumber *) tempTotalDiskSpace //size of the file system.
+{
+   // NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSTemporaryDirectory() error:nil]; //werkt
+    
+      NSString *tempDisks1s1 = @"/";
+      NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                   attributesOfFileSystemForPath:tempDisks1s1 error:nil];
+    
+    
+    //return  [fattributes objectForKey:NSFileSystemSize];//werkt
+    /*
+    NSFileSystemFreeNodes = 5027061;
+    NSFileSystemFreeSize = 20590841856;
+    NSFileSystemNodes = 69697534;
+    NSFileSystemNumber = 234881026;
+    NSFileSystemSize = 285481107456;
+    */
+  return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB",[[fattributes objectForKey:NSFileSystemSize] floatValue] / 1048576] ];
+    
+    //omdat dit oud is deprecated, is hierboven een alternatief getest
+	/*
+    NSString *tempDisks1s1 = @"/";
+	NSDictionary *fsAttributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisks1s1];
+	NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB",[totalSize floatValue] / 1048576] ];
+    */
+    
+}
+
+- (NSNumber *) tempFreeDiskSpace //the amount of free space on the file system.
+{
+    // code hieronder is deprecated
+    /*
+	NSString *tempDisks1s1 = @"/";
+	NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisks1s1];	
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemFreeSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB",[totalSize floatValue] / 1048576] ];
+     */
+    
+    NSString *tempDisks1s1 = @"/";
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:tempDisks1s1 error:nil];
+    
+    return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB",[[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / 1048576] ];
+}
+
+- (NSNumber *) pctFreeDiskSpace //the amount of free space on the file system.
+{
+	NSString *tempDisks1s1 = @"/";
+	// NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisks1s1];
+
+    ////////
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:tempDisks1s1 error:nil];
+
+    
 	// Create formatter
 	NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init]; 
 	
@@ -258,59 +207,129 @@ NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
 	float percent = [[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / [[fattributes objectForKey:NSFileSystemSize] floatValue];
 	NSNumber *num = [NSNumber numberWithFloat:percent];
 	formattedOutput = [formatter stringFromNumber:num];
-
-	return [NSString stringWithFormat:@"percent: %@",[formatter stringFromNumber:num]]; 
 	
+	return [NSString stringWithFormat:@"percent free: %@",[formatter stringFromNumber:num]]; 	
 }
 
 
+//--------------------------------------------
+// /private/var is the mount point for /dev/disk0s1s2
+//--------------------------------------------
 
-//test temp disk size
-
-- (NSNumber *) tempTotalDiskSpace //size of the file system.
+- (NSNumber *) tempTotalDiskSpaceVar //size of the file system.
 {
     //NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSTemporaryDirectory() error:nil];
     //return  [fattributes objectForKey:NSFileSystemSize];//werkt
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	NSError *error = nil;
-	//NSDictionary *attr = [fm attributesOfItemAtPath:@"/" error:&error]; //werkt
-	NSDictionary *attr = [fm attributesOfItemAtPath:@"/dev/disk0s1s2" error:&error];
-	
-	return [NSString stringWithFormat:@"%llu", [[attr objectForKey:NSFileSystemSize] unsignedLongLongValue]/ 1073741824 ];
+	NSString *tempDisk0s1s2 = @"/private/var";
+    
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:tempDisk0s1s2 error:nil];
+    
+    return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[[fattributes objectForKey:NSFileSystemSize] floatValue] / 1073741824] ];
+    
+    //code hieronder is deprecated
+    /*
+	NSDictionary *fsAttributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisk0s1s2];
+	NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824] ];
+    */
+    
 }
 
-- (NSNumber *) tempFreeDiskSpace //the amount of free space on the file system.
+
+- (NSNumber *) tempFreeDiskSpaceVar //the amount of free space on the file system.
 {
-    //NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSTemporaryDirectory() error:nil];
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	NSError *error = nil;
-	//NSDictionary *attr = [fm attributesOfItemAtPath:@"/" error:&error]; //werkt
-	NSDictionary *attr = [fm attributesOfItemAtPath:@"/dev/disk0s1s1" error:&error];
-
-	
-   //return [[fattributes objectForKey:NSFileSystemFreeSize] unsignedLongLongValue];
-//return [NSString stringWithFormat:@"%llu", [[fattributes objectForKey:NSFileSystemFreeSize] unsignedLongLongValue]];//werkt
-
-	return [NSString stringWithFormat:@"%llu", [[attr objectForKey:NSFileSystemFreeSize] unsignedLongLongValue]/ 1073741824 ];//werkt
-
+	NSString *tempDisk0s1s2 = @"/private/var";
+    
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:tempDisk0s1s2 error:nil];
+    
+    return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / 1073741824] ];
+    
+    //code hieronder is deprecated
+    /*
+	NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisk0s1s2];	
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemFreeSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue] / 1073741824] ];
+     */
 }
 
 
-// nog een test 
-- (NSNumber *) fileSize
+
+- (NSNumber *) pctFreeDiskSpaceVar //the amount of free space on the file system.
 {
-    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-	return [NSString stringWithFormat:@"%llu", [[fattributes objectForKey:NSFileSize] unsignedLongLongValue]];//werkt
+	NSString *tempDisk0s1s2 = @"/private/var";
+    //	NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:tempDisk0s1s2];
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:tempDisk0s1s2 error:nil];
+    
+	// Create formatter
+	NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init]; 
+	
+	NSString *formattedOutput = [formatter stringFromNumber:[fattributes objectForKey:NSFileSystemFreeSize]];
+	
+	//--------------------------------------------
+	// Format style as percentage, output to console
+	//--------------------------------------------
+	[formatter setNumberStyle:NSNumberFormatterPercentStyle];
+	
+	// Set to the current locale
+	[formatter setLocale:[NSLocale currentLocale]];
+	
+	// Get percentage of system space that is available
+	float percent = [[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / [[fattributes objectForKey:NSFileSystemSize] floatValue];
+	NSNumber *num = [NSNumber numberWithFloat:percent];
+	formattedOutput = [formatter stringFromNumber:num];
+	
+	return [NSString stringWithFormat:@"percent free: %@",[formatter stringFromNumber:num]]; 	
 }
+
+
+//--------------------------------------------
+// /dev is the mount point for devfs
+//--------------------------------------------
+
+
+- (NSNumber *) devFreeDiskSpace //the amount of free space on the file system.
+{
+	NSString *devfs = @"/dev";
+    
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:devfs error:nil];
+    
+    return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f KB",[[fattributes objectForKey:NSFileSystemFreeSize] floatValue] / 1024] ]; //was gedeeld door 8192
+    
+    //code hieronder is deprecated
+    /*
+	NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:devfs];
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemFreeSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f KB",[totalSize floatValue] / 8192] ];
+     */
+}
+
+- (NSNumber *) devTotalDiskSpace //the amount of free space on the file system.
+{
+	NSString *devfs = @"/dev";
+    
+    NSDictionary *fattributes = [[NSFileManager defaultManager]
+                                 attributesOfFileSystemForPath:devfs error:nil];
+    
+    return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f KB",[[fattributes objectForKey:NSFileSystemSize] floatValue] / 1024] ];
+
+    //code hieronder is deprcated
+    /*
+	NSDictionary *fattributes = [[NSFileManager defaultManager] fileSystemAttributesAtPath:devfs];
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f KB",[totalSize floatValue] / 8192] ];
+     */
+}
+
 
 - (NSNumber *) freeNodes //value indicates the number of free nodes in the file system.
 {
     NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
     return [fattributes objectForKey:NSFileSystemFreeNodes];//werkt
 	//return [[fattributes objectForKey:NSFileSystemFreeNodes] LongValue];
-
 }
 
 - (NSNumber *) systemNodes //value indicates the number of nodes in the file system.
@@ -319,75 +338,205 @@ NSNumber *totalSize = [fsAttributes objectForKey:NSFileSystemSize];
     return [fattributes objectForKey:NSFileSystemNodes];
 }
 
+- (NSNumber *) systemSize 
+{
+    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
+    //return [fattributes objectForKey:NSFileSystemSize];
+	NSNumber *totalSize = [fattributes objectForKey:NSFileSystemSize];
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f GB",[totalSize floatValue]/ 1073741824] ];	
+
+}
+
 - (NSNumber *) systemNumber  // indicates the filesystem number of the file system.
+//is the keyed attribute that gives you the file system number for the mounted file system that contains the path
 {
     NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
     return [fattributes objectForKey:NSFileSystemNumber];
 }
 
+///////////////////////////////////////////////////
 
-//owners info
 
-- (NSString *) ownerAccountName
+- (NSString *) accountname
 {
-    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-	return [fattributes objectForKey:NSFileOwnerAccountName] ;
+	NSError *error = nil;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSDictionary *attr = [fm attributesOfItemAtPath:@"/var/log/syslog" error:&error];
+	NSString *fileOwnerAccountName = [attr objectForKey:NSFileOwnerAccountName];
+	return [NSString stringWithFormat:@"%@", fileOwnerAccountName ];
 }
 
-- (NSString *) ownerGroupAccountName  //value indicates the group name of the file's owner.
+- (NSString *) accountid
 {
-    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-	return [fattributes objectForKey:NSFileGroupOwnerAccountName] ;
-}
-
-// NSLog(@"free disk space: %dGB", (int)(freeSpace / 1073741824));
-
-/*
- 
- NSFileSystemFreeNodes = 5027061;
- NSFileSystemNodes = 69697534;
- NSFileSystemNumber = 234881026;
- 
- 
- 
-NSFileCreationDate = "2009-08-28 15:37:03 -0400";
-NSFileExtensionHidden = 0;
-NSFileGroupOwnerAccountID = 80;
-NSFileGroupOwnerAccountName = admin;
-NSFileModificationDate = "2009-10-28 15:22:15 -0400";
-NSFileOwnerAccountID = 0;
-NSFileOwnerAccountName = root;
-NSFilePosixPermissions = 1021;
-NSFileReferenceCount = 40;
-NSFileSize = 1428;
-NSFileSystemFileNumber = 2;
-NSFileSystemNumber = 234881026;
-NSFileType = NSFileTypeDirectory;
-*/
- //
-
-
-
-
-
-
-
-
-// nog een test voor de os en data disk
-- (NSNumber *) rootTotalDiskSpace
-{
-    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-    return [fattributes objectForKey:NSFileSystemSize];
-}
-
-- (NSNumber *) rootFreeDiskSpace
-{
-    NSDictionary *fattributes = [[NSFileManager defaultManager] attributesOfFileSystemForPath:NSHomeDirectory() error:nil];
-	// return [[fattributes objectForKey:NSFileSystemFreeSize] unsignedLongLongValue];
-	return [NSString stringWithFormat:@"%llu", [[fattributes objectForKey:NSFileSize] unsignedLongLongValue]];
+	NSError *error = nil;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSDictionary *attr = [fm attributesOfItemAtPath:@"/var/log/syslog" error:&error];
+	NSString *fileOwnerAccountID = [attr objectForKey:fileOwnerAccountID];
+	return [NSString stringWithFormat:@"%@", fileOwnerAccountID ];
 }
 
 
+- (NSNumber *) accountidgroup
+{
+	NSError *error = nil;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSDictionary *attr = [fm attributesOfItemAtPath:@"/var/log/syslog" error:&error];
+	NSString *fileGroupOwnerAccountID = [attr objectForKey:fileGroupOwnerAccountID];
+    return [NSString stringWithFormat:@"%@", fileGroupOwnerAccountID ];
+
+}
+
+- (NSNumber *) accountnamegroup
+{
+	NSError *error = nil;
+	NSFileManager *fm = [NSFileManager defaultManager];
+	NSDictionary *attr = [fm attributesOfItemAtPath:@"/var/log/syslog" error:&error];
+	NSString *fileGroupOwnerAccountName = [attr objectForKey:NSFileGroupOwnerAccountName];
+	return [NSString stringWithFormat:@"%@", fileGroupOwnerAccountName ];
+}
+
+///////////////////////////////////////////////////
+
+
+- (unsigned long long int) documentsFolderSize
+{
+    NSFileManager *_manager = [NSFileManager defaultManager];
+    NSArray *_documentPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *_documentsDirectory = [_documentPaths objectAtIndex:0];   
+	
+    NSArray *_documentsFileList;
+    NSEnumerator *_documentsEnumerator;
+    NSString *_documentFilePath;
+    unsigned long long int _documentsFolderSize = 0;
+	
+    _documentsFileList = [_manager subpathsAtPath:_documentsDirectory];
+    _documentsEnumerator = [_documentsFileList objectEnumerator];
+    while (_documentFilePath = [_documentsEnumerator nextObject]) {
+        //code hieronder is deprecated
+        NSDictionary *_documentFileAttributes = [_manager fileAttributesAtPath:[_documentsDirectory stringByAppendingPathComponent:_documentFilePath] traverseLink:YES];
+        _documentsFolderSize += [_documentFileAttributes fileSize];
+    }
+	
+    return _documentsFolderSize;
+}
+
++(float)getTotalDiskSpaceInBytes
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);  
+    struct statfs tStats;  
+    statfs([[paths lastObject] cString], &tStats);  
+    float totalSpace = (float)(tStats.f_blocks * tStats.f_bsize);  
+	
+    return totalSpace;  
+} 
+
+// werkt
+- (NSUInteger) logSize
+{
+	NSFileManager *fm = [[NSFileManager alloc] init];
+	//NSFileManager *fm = [NSFileManager defaultManager];	
+	
+	return [[[fm attributesOfItemAtPath:[@"/var/log/syslog" stringByStandardizingPath] error:nil] 
+			 objectForKey:NSFileSize] unsignedIntegerValue ];
+}
+ 
+ 
+- (NSString *)prettyBytesLogSize
+{
+    
+    float bytes = [self logSize];
+    NSUInteger unit = 0;
+    
+    if(bytes < 1) return @"-";
+    
+    while(bytes > 1024) {
+        bytes = bytes / 1024.0;
+        unit++;
+    }
+    
+    if(unit > 5) return @"HUGE";
+    
+    NSString *unitString = [[NSArray arrayWithObjects:@"Bytes", @"KB", @"MB", @"GB", @"TB", @"PB", nil] objectAtIndex:unit];
+    
+    if(unit == 0) {
+        return [NSString stringWithFormat:@"%d %@", (int)bytes, unitString];
+    } else {
+        return [NSString stringWithFormat:@"%.2f %@", (float)bytes, unitString];
+    }
+}
+
+
+
+
+
+//////////////////////////////////////////////
+//
+//  de  totale dir size voor de video cashes
+//
+//////////////////////////////////////////////
+
+
+- (NSString *) getCachesDirSizeInBytes
+{
+    
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    struct statfs tStats;
+    statfs([[paths lastObject] cString], &tStats);
+    
+    float totalSpace = (float)(tStats.f_blocks * tStats.f_bsize);
+	
+    //return totalSpace;
+    
+    	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB", (totalSpace / 1048576 )] ];
+} // not used while it also calculates the sub folders
+//I also thing the displayed siez is not corresponding to the truth
+
+
+///rentals cache
+- (NSString *) cachesSize
+{
+	//unsigned long long totalSize = 10;
+	float totalSize = 0;
+	NSString *folderPath = @"/private/var/mobile/Library/Caches/AppleTV/Video/LocalAndRental";
+	NSArray *contents;
+	NSEnumerator *enumerator;
+	NSString *path;
+	contents = [[NSFileManager defaultManager] subpathsAtPath:folderPath];
+	enumerator = [contents objectEnumerator];
+	while (path = [enumerator nextObject]) 
+	{
+		NSDictionary *fattrib = [[[NSFileManager alloc] init] fileAttributesAtPath:[folderPath stringByAppendingPathComponent:path] traverseLink:YES];
+		totalSize +=[fattrib fileSize];
+	}
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB", (totalSize / 1048576 )] ];
+	if(contents != nil)
+	{
+	[contents release];
+	[path release];
+	}
+}
+
+
+
+- (NSString *) cachesSize1 //other
+{
+	float totalSize = 0;
+	NSString *folderPath = @"/private/var/mobile/Library/Caches/AppleTV/Video/Other";
+	NSArray *contents;
+	NSEnumerator *enumerator;
+	NSString *path;
+	contents = [[NSFileManager defaultManager] subpathsAtPath:folderPath];
+	enumerator = [contents objectEnumerator];
+	while (path = [enumerator nextObject]) 
+	{
+		NSDictionary *fattrib2 = [[[NSFileManager alloc] init] fileAttributesAtPath:[folderPath stringByAppendingPathComponent:path] traverseLink:YES];
+		totalSize +=[fattrib2 fileSize];		
+	}//end while
+	return [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.2f MB", (totalSize / 1048576 )] ];
+	if(contents != nil){
+	[contents release];
+		[path release];}
+}
 
 
 #pragma mark platform type and name utils
@@ -397,32 +546,10 @@ NSFileType = NSFileTypeDirectory;
 	
     // The ever mysterious iFPGA
     if ([platform isEqualToString:@"iFPGA"]) return UIDeviceIFPGA;
-	/*
-    // iPhone
-    if ([platform isEqualToString:@"iPhone1,1"]) return UIDevice1GiPhone;
-    if ([platform isEqualToString:@"iPhone1,2"]) return UIDevice3GiPhone;
-    if ([platform hasPrefix:@"iPhone2"]) return UIDevice3GSiPhone;
-    if ([platform hasPrefix:@"iPhone3"]) return UIDevice4iPhone;
-    if ([platform hasPrefix:@"iPhone4"]) return UIDevice5iPhone;
-    
-    // iPod
-    if ([platform hasPrefix:@"iPod1"]) return UIDevice1GiPod;
-    if ([platform hasPrefix:@"iPod2"]) return UIDevice2GiPod;
-    if ([platform hasPrefix:@"iPod3"]) return UIDevice3GiPod;
-    if ([platform hasPrefix:@"iPod4"]) return UIDevice4GiPod;
-	
-    // iPad
-    if ([platform hasPrefix:@"iPad1"]) return UIDevice1GiPad;
-    if ([platform hasPrefix:@"iPad2"]) return UIDevice2GiPad;
-    if ([platform hasPrefix:@"iPad3"]) return UIDevice3GiPad;
-    */
+
     // Apple TV
     if ([platform hasPrefix:@"AppleTV2"]) return UIDeviceAppleTV2;
-	/*
-    if ([platform hasPrefix:@"iPhone"]) return UIDeviceUnknowniPhone;
-    if ([platform hasPrefix:@"iPod"]) return UIDeviceUnknowniPod;
-    if ([platform hasPrefix:@"iPad"]) return UIDeviceUnknowniPad;
-    */
+
 	// Simulator thanks Jordan Breeding
     if ([platform hasSuffix:@"86"] || [platform isEqual:@"x86_64"])
     {
@@ -437,33 +564,10 @@ NSFileType = NSFileTypeDirectory;
 {
     switch ([self platformType])
     {
-       /*
-		case UIDevice1GiPhone: return IPHONE_1G_NAMESTRING;
-        case UIDevice3GiPhone: return IPHONE_3G_NAMESTRING;
-        case UIDevice3GSiPhone: return IPHONE_3GS_NAMESTRING;
-        case UIDevice4iPhone: return IPHONE_4_NAMESTRING;
-        case UIDevice5iPhone: return IPHONE_5_NAMESTRING;
-        case UIDeviceUnknowniPhone: return IPHONE_UNKNOWN_NAMESTRING;
-			
-        case UIDevice1GiPod: return IPOD_1G_NAMESTRING;
-        case UIDevice2GiPod: return IPOD_2G_NAMESTRING;
-        case UIDevice3GiPod: return IPOD_3G_NAMESTRING;
-        case UIDevice4GiPod: return IPOD_4G_NAMESTRING;
-        case UIDeviceUnknowniPod: return IPOD_UNKNOWN_NAMESTRING;
-            
-        case UIDevice1GiPad : return IPAD_1G_NAMESTRING;
-        case UIDevice2GiPad : return IPAD_2G_NAMESTRING;
-        case UIDevice3GiPad : return IPAD_3G_NAMESTRING;
-        case UIDeviceUnknowniPad : return IPAD_UNKNOWN_NAMESTRING;
-       */     
+    
         case UIDeviceAppleTV2 : return APPLETV_2G_NAMESTRING;
         case UIDeviceUnknownAppleTV: return APPLETV_UNKNOWN_NAMESTRING;
-      /*      
-        case UIDeviceiPhoneSimulator: return IPHONE_SIMULATOR_NAMESTRING;
-        case UIDeviceiPhoneSimulatoriPhone: return IPHONE_SIMULATOR_IPHONE_NAMESTRING;
-        case UIDeviceiPhoneSimulatoriPad: return IPHONE_SIMULATOR_IPAD_NAMESTRING;
-      */      
-        case UIDeviceIFPGA: return IFPGA_NAMESTRING;
+		case UIDeviceIFPGA: return IFPGA_NAMESTRING;
             
         default: return IOS_FAMILY_UNKNOWN_DEVICE;
     }
@@ -591,77 +695,82 @@ NSFileType = NSFileTypeDirectory;
     return [dateFormatter stringFromDate:date];
 }
 
-//uptime test
-
-+ (NSTimeInterval)uptime 
-{ 
-		struct timeval boottime; 
-		size_t len = sizeof(boottime); 
-		
-	int mib[2] = { CTL_KERN, KERN_BOOTTIME };
-		
-	if (sysctl(mib, 2, &boottime, &len, NULL, 0) == -1) { 
-		perror("sysctl"); 
-		return (NSTimeInterval) -1; 
-	} 
-		time_t bsec = boottime.tv_sec, csec = time(NULL); 
-		return (NSTimeInterval) difftime(csec, bsec);
-} 
-
+/*
 // Illicit Bluetooth check -- cannot be used in App Store
 
 //void loop() {
-- (NSString*) bluetoothx {
-	
+
+- (NSString*) bluetoothx
+{
  Class btclass = NSClassFromString(@"GKBluetoothSupport");
- if (
-	 [btclass respondsToSelector:@selector(bluetoothStatus)]
-	 )
+ if ([btclass respondsToSelector:@selector(bluetoothStatus)])
+     
  {
 	 //printf("BTStatus %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0);
-	 return [NSString stringWithFormat : @"BT status_: ", (int)[btclass performSelector:@selector(bluetoothStatus)]] ;
-//	 return [NSString stringWithFormat : @"BT status_: %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)]  & 1) != 0];
-	 
-	 //[NSString stringWithFormat: @"kernBOOT_: %d", 
-	 
-	 //BOOL bluetooth = ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0;
-	 
-	 
-	 //printf("Bluetooth %s enabled\n", bluetooth ? "is" : "isn't");
-	 //return [NSString stringWithFormat: @"BT_: %s enabled\n", bluetooth ? "is" : "isn't"];
-	 
+	 //return [NSString stringWithFormat : @"BT status_: ", (int)[btclass performSelector:@selector(bluetoothStatus)]] ;
+     
+	 return [NSString stringWithFormat : @"BT status_: %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)]  & 1) != 0];
  }
+    { // test
+    }
+    
+    
+    
 }
  
 
-
-
-- (NSString*) bluetoothy {
+- (NSString*)bluetoothy
+{
 	
 	Class btclass = NSClassFromString(@"GKBluetoothSupport");
 	if (
 		[btclass respondsToSelector:@selector(bluetoothStatus)]
 		)
+
 	{
 		//printf("BTStatus %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0);
-		//return [NSString stringWithFormat : @"BT status_: %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)]  & 1) != 0];
+	//	return [BOOL stringWithFormat : @"BT status_: %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)]  & 1) != 0];
 		
-		//[NSString stringWithFormat: @"kernBOOT_: %d", 
+		//[NSString stringWithFormat: @"kernBOOT_: %d",
 		
 		BOOL bluetooth = ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0;
 		
 		
 		//printf("Bluetooth %s enabled\n", bluetooth ? "is" : "isn't");
 		//return [NSString stringWithFormat: @"BT_: ", @selector(bluetoothStatus) ];
-		return [NSString stringWithFormat: @"BT_: ", bluetooth ];
+		//return [NSString stringWithFormat: @"BT_: ", bluetooth ];
 
-		//		return [NSString stringWithFormat: @"BT_: %s enabled\n", bluetooth ? "is" : "isn't"];
+        return [NSString stringWithFormat: @"BT_: %s enabled\n", bluetooth ? "is" : "isn't"];
 		
 	}
 }
+*/
 
+// Illicit Bluetooth check -- cannot be used in App Store
+- (NSString*) bluetoothy
+{
+ Class btclass = NSClassFromString(@"GKBluetoothSupport");
+
+ if (
+     [btclass respondsToSelector:@selector(bluetoothStatus)]
+     )
+     
+ {
+ printf("BTStatus %d\n", ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0);
+ BOOL bluetooth = ((int)[btclass performSelector:@selector(bluetoothStatus)] & 1) != 0;
+// printf("Bluetooth %s enabled\n", bluetooth ? "is" : "isn't");
+     return [NSString stringWithFormat: @"BT_: %s enabled\n", bluetooth ? "is" : "isn't"];
+  
+ }
+    
+    
+}
 
 @end
+
+
+
+
 
 
 

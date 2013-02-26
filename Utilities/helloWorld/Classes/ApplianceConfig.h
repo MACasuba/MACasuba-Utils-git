@@ -6,7 +6,6 @@
 //  Copyright 2011 Michael Gile. All rights reserved.
 //
 
-
 #import "BackRow.h"
 
 #define APPLIANCE_LOCALIZED_NAME		@"MACasuba"
@@ -30,6 +29,15 @@
 #define NETWORK_CATEGORY_NAME           @"Network info"
 #define NETWORK_PREFERRED_ORDER         3
 
-#define MEMORY_ID                      @"Memory info"
-#define MEMORY_CATEGORY_NAME           @"Memory info"
-#define MEMORY_PREFERRED_ORDER         4
+#define MEMORY_ID						@"Memory info"
+#define MEMORY_CATEGORY_NAME			@"Memory info"
+#define MEMORY_PREFERRED_ORDER			4
+
+#define POWER_ID						@"Power info"
+#define POWER_CATEGORY_NAME				@"Power info"
+#define POWER_PREFERRED_ORDER			5
+
+#define LOG_ID                          @"Log info"
+#define LOG_CATEGORY_NAME				@"Log info"
+#define LOG_PREFERRED_ORDER             6
+

@@ -6,6 +6,9 @@
 //  Copyright 2011 Michael Gile. All rights reserved.
 //
 
+
+//iMHo het lijkt er op dat dit in iOS6 topshelf niet meer nodig is
+
 #import "BRTopShelfView-ProductImage.h"
 #import "BackRowExtras.h"
 #import "BackRow.h"

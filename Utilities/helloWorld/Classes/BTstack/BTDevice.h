@@ -36,11 +36,13 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "SoftwareMainMenu.h"
 #include "utils.h"
 
 #define kCODHID      0x2540
 #define kCODZeeMote   0x584
 #define kCODInvalid  0xffff
+
 
 typedef enum {
 	kBluetoothDeviceTypeGeneric = 0,
@@ -69,8 +71,9 @@ typedef enum {
 
 	uint8_t    rssi;
 	
-	// deprecated
-	BluetoothConnectionState  connectionState; 
+	// deprecated  iMho bij wijze van test omgegooid naar de oude BluetoothconnectionState
+	BluetoothConnectionState  connectionState;
+   //SCNetworkConnectionStatus  connectionState;
 }
 
 - (void) setAddress:(bd_addr_t*)addr;
@@ -87,6 +90,7 @@ typedef enum {
 @property (nonatomic, assign) uint16_t            clockOffset;
 @property (nonatomic, assign) uint8_t             pageScanRepetitionMode;
 @property (nonatomic, assign) uint8_t             rssi;
+//@property (nonatomic, assign) SCNetworkConnectionStatus connectionState;
 @property (nonatomic, assign) BluetoothConnectionState connectionState;
 
 @end

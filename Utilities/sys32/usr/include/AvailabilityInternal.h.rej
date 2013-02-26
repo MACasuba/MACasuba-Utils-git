@@ -1,0 +1,21 @@
+--- AvailabilityInternal.h.orig 2009-09-06 15:54:52.072732297 +0200
++++ AvailabilityInternal.h 2009-09-06 15:54:07.948042542 +0200        
+@@ -52,11 +52,14 @@
+         #define __IPHONE_OS_VERSION_MAX_ALLOWED     __IPHONE_3_0                          
+     #endif
+     // make sure a valid min is set
+-    #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_2_0
+-        #undef __IPHONE_OS_VERSION_MIN_REQUIRED
+-        #define __IPHONE_OS_VERSION_MIN_REQUIRED    __IPHONE_2_0
++    #if __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_1_2
++        #define __AVAILABILITY_INTERNAL__IPHONE_1_2          __AVAILABILITY_INTERNAL_UNAVAILABLE
++    #elif __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_1_2
++        #define __AVAILABILITY_INTERNAL__IPHONE_1_2          __AVAILABILITY_INTERNAL_WEAK_IMPORT
++    #else
++        #define __AVAILABILITY_INTERNAL__IPHONE_1_2
+     #endif
+-
++
+     // set up internal macros (up to 2.0)
+      #if __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_2_0
+         #define __AVAILABILITY_INTERNAL__IPHONE_2_0          __AVAILABILITY_INTERNAL_UNAVAILABLE

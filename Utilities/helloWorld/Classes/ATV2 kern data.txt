@@ -1,0 +1,89 @@
+AppleTV2:~ root# sysctl -a
+kern.ostype = Darwin
+kern.osrelease = 11.0.0
+kern.osrevision = 199506
+kern.version = Darwin Kernel Version 11.0.0: Wed May  2 12:12:18 PDT 2012; root:xnu-1878.11.11~2/RELEASE_ARM_S5L8930X
+kern.maxvnodes = 1024
+kern.maxproc = 148
+kern.maxfiles = 12288
+kern.argmax = 262144
+kern.securelevel = 0
+kern.hostname = AppleTV2
+kern.hostid = 0
+kern.clockrate: hz = 100, tick = 10000, profhz = 100, stathz = 100
+kern.posix1version = 200112
+kern.ngroups = 16
+kern.job_control = 1
+kern.saved_ids = 1
+kern.boottime = Thu Jun 21 21:54:43 2012
+
+kern.nisdomainname = 
+kern.maxfilesperproc = 10240
+kern.maxprocperuid = 74
+kern.usrstack = 803209216
+kern.exec: unknown type returned
+kern.aiomax = 20
+kern.aioprocmax = 8
+kern.aiothreads = 2
+kern.corefile = /cores/core.%P
+kern.delayterm = 0
+kern.shreg_private = 0
+kern.usrstack64 = 8247063986309169152
+kern.procname = 
+kern.speculative_reads_disabled = 0
+kern.osversion = 9B830
+kern.safeboot = 0
+kern.rage_vnode = 0
+vfs.hfs has 2 mounted instances
+hw.machine = AppleTV2,1
+hw.model = K66AP
+hw.ncpu = 1
+hw.byteorder = 1234
+hw.physmem = 257359872
+hw.usermem = 200990720
+hw.pagesize = 4096
+hw.epoch = 1
+hw.vectorunit = 0
+hw.busfrequency = 100000000
+hw.cpufrequency = 0
+hw.cachelinesize = 64
+hw.l1icachesize = 32768
+hw.l1dcachesize = 32768
+hw.l2settings = 1
+hw.l2cachesize = 524288
+hw.tbfrequency = 24000000
+hw.memsize = 257359872
+hw.availcpu = 1
+user.cs_path = /usr/bin:/bin:/usr/sbin:/sbin
+user.bc_base_max = 99
+user.bc_dim_max = 2048
+user.bc_scale_max = 99
+user.bc_string_max = 1000
+user.coll_weights_max = 2
+user.expr_nest_max = 32
+user.line_max = 2048
+user.re_dup_max = 255
+user.posix2_version = 200112
+user.posix2_c_bind = 0
+user.posix2_c_dev = 0
+user.posix2_char_term = 0
+user.posix2_fort_dev = 0
+user.posix2_fort_run = 0
+user.posix2_localedef = 0
+user.posix2_sw_dev = 0
+user.posix2_upe = 0
+user.stream_max = 20
+user.tzname_max = 255
+kern.ostype: Darwin
+kern.osrelease: 11.0.0
+kern.osrevision: 199506
+kern.version: Darwin Kernel Version 11.0.0: Wed May  2 12:12:18 PDT 2012; root:xnu-1878.11.11~2/RELEASE_ARM_S5L8930X
+kern.maxvnodes: 1024
+kern.maxproc: 148
+kern.maxfiles: 12288
+kern.argmax: 262144
+kern.securelevel: 0
+kern.hostname: AppleTV2
+kern.hostid: 0
+kern.clockrate: { hz = 100, tick = 10000, tickadj = 22, profhz = 100, stathz = 100 }
+sysctl: sysctl fmt -1 1024 2: No such file or directory

@@ -30,7 +30,8 @@
  */
 
 #import "BTstackManager.h"
-
+#import <Foundation/Foundation.h>
+#import <stdint.h>
 #import "btstack.h"
 #import "BTDevice.h"
 
@@ -49,12 +50,15 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	[btstackManager handlePacketWithType:packet_type forChannel:channel andData:packet withLen:size];
 }
 
+
 @implementation BTstackManager
 
 @synthesize delegate = _delegate;
 @synthesize deviceInfo;
 @synthesize listeners;
 @synthesize discoveredDevices;
+
+
 
 -(BTstackManager *) init {
 	self = [super init];
@@ -69,7 +73,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	
 	// delegate and listener
 	_delegate = nil;
-	[self setListeners:[[NSMutableArray alloc] init]];
+	[self setListeners:[[NSMutableSet alloc] init]];
+	//[self setListeners:[[NSMutableArray alloc] init]];
 	
 	// Use Cocoa run loop
 	run_loop_init(RUN_LOOP_COCOA);
@@ -86,6 +91,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	}
 	return btstackManager;
 }
+
 
 // listeners
 -(void) addListener:(id<BTstackManagerListener>)listener{
@@ -161,11 +167,15 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	}
 }
 
+/*
+
+//  hieronder gaat het fout
 
 // Activation
 -(BTstackError) activate {
 	
 	BTstackError err = 0;
+    
 	if (!connectedToDaemon) {
 		err = bt_open();
 		if (err) return BTSTACK_CONNECTION_TO_BTDAEMON_FAILED;
@@ -178,13 +188,20 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	
 	return err;
 }
+ 
+ 
 
+
+
+//deze gaat fout
 -(BTstackError) deactivate {
 	if (!connectedToDaemon) return BTSTACK_CONNECTION_TO_BTDAEMON_FAILED;
 	state = kW4Deactivated;
 	bt_send_cmd(&btstack_set_power_mode, HCI_POWER_OFF);
 	return 0;
 }
+*/
+ 
 
 -(BOOL) isActive {
 	return state == kActivated;
@@ -200,9 +217,13 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 			return NO;
 	}
 }
+
+
 -(BOOL) isDiscoveryActive {
 	return state == kActivated && (discoveryState != kInactive);
 }
+
+/*
 
 // Discovery
 -(BTstackError) startDiscovery {
@@ -212,6 +233,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	bt_send_cmd(&hci_write_inquiry_mode, 0x01); // with RSSI
 	return 0;
 };
+
+
 
 -(BTstackError) stopDiscovery{
 	if (state < kActivated) return BTSTACK_NOT_ACTIVATED;
@@ -239,6 +262,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	}
 	return 0;
 };
+ */
+ 
 
 -(int) numberOfDevicesFound{
 	return [discoveredDevices count];
@@ -258,6 +283,9 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	return nil;
 }
 
+
+/*
+//dit stuk doet het niet
 - (void) activationHandleEvent:(uint8_t *)packet withLen:(uint16_t) size {
 	switch (state) {
 						
@@ -333,11 +361,16 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	}
 }
 
+
 -(void) discoveryRemoteName{
 	BOOL found = NO;
-	while ( discoveryDeviceIndex < [discoveredDevices count]){
+    
+
+	while ( discoveryDeviceIndex < [discoveredDevices count])
+    {
 		BTDevice *device = [discoveredDevices objectAtIndex:discoveryDeviceIndex];
-		if (device.name) {
+		if (device.name)
+        {
 			discoveryDeviceIndex ++;
 			continue;
 		}
@@ -347,13 +380,16 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 		found = YES;
 		break;
 	}
-	if (!found) {
+
+	if (!found)
+    {
 		// printf("Queried all devices, restart.\n");
 		discoveryState = kInquiry;
 		bt_send_cmd(&hci_inquiry, HCI_INQUIRY_LAP, INQUIRY_INTERVAL, 0);
 		[self sendDiscoveryInquiry];
 	}
 }
+ 
 
 - (NSString *) createRemoteNameFromRemoteNameEvent:(uint8_t *) packet {
     // get lenght: first null byte or max 248 chars
@@ -367,6 +403,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
     }
     return name;
 }
+
+
 
 - (void) updateBTDevice:(BTDevice *) device fromRemoteNameEvent:(uint8_t *) packet {
 
@@ -386,6 +424,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
     [addrString release];
 }
 
+
 - (void) handleRemoteNameCached: (uint8_t *) packet {
 	bd_addr_t addr;
 	bt_flip_addr(addr, &packet[3]);
@@ -397,19 +436,27 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
     [self sendDeviceInfo:device];
 }
 
+ 
+ 
+
 - (void) handleRemoteName: (uint8_t *) packet {
 	bd_addr_t addr;
 	bt_flip_addr(addr, &packet[3]);
 	// NSLog(@"Get remote name done for %@", [BTDevice stringForAddress:&addr]);
 	BTDevice* device = [self deviceForAddress:&addr];
     if (!device) return;
-
-    [self updateBTDevice:device fromRemoteNameEvent:packet];
+    
+    //imho toegevoegd omat het in een file op internet wel stond
+    [device setName:[self createRemoteNameFromRemoteNameEvent:packet]];
+   //deze regel daarom maar uitgezet
+   // [self updateBTDevice:device fromRemoteNameEvent:packet];
     [self sendDeviceInfo:device];
     
     discoveryDeviceIndex++;
     [self discoveryRemoteName];
 }
+
+
 
 -(void) discoveryHandleEvent:(uint8_t *)packet withLen:(uint16_t) size {
 	bd_addr_t addr;
@@ -531,6 +578,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 			break;
 	}
 }
+*/
 
 -(void) dropLinkKeyForAddress:(bd_addr_t*) address {
 	NSString *devAddress = [BTDevice stringForAddress:address];
@@ -539,6 +587,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	// NSLog(@"Removing link key for %@", devAddress);
 }
 
+/*
 -(void) handlePacketWithType:(uint8_t)packet_type forChannel:(uint16_t)channel andData:(uint8_t *)packet withLen:(uint16_t) size {
 	switch (state) {
 			
@@ -575,6 +624,8 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 		[_delegate btstackManager:self handlePacketWithType:packet_type forChannel:channel andData:packet withLen:size];
 	}
 }
+ 
+*/
 
 // Connections
 -(BTstackError) createL2CAPChannelAtAddress:(bd_addr_t*) address withPSM:(uint16_t)psm authenticated:(BOOL)authentication {
@@ -602,7 +653,6 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	if (state < kActivated) return BTSTACK_NOT_ACTIVATED;
 	return 0;
 };
-
 -(BTstackError) createRFCOMMConnectionAtAddress:(bd_addr_t*) address withChannel:(uint16_t)channel authenticated:(BOOL)authentication {
 	if (state < kActivated) return BTSTACK_NOT_ACTIVATED;
 	if (state != kActivated) return BTSTACK_BUSY;
@@ -623,5 +673,4 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
 	if (state <kActivated) return BTSTACK_NOT_ACTIVATED;
 	return 0;
 };
-
 @end

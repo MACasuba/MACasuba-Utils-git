@@ -8,7 +8,9 @@
 
 #import "TopShelfController.h"
 #import "BackRow.h"
+//lijkt niet langer nodig voor de iOS topshelf
 #import "BRTopShelfView-ProductImage.h"
+
 
 @implementation TopShelfController
 
@@ -30,14 +32,16 @@
 }
 
 
+ 
 - (BRTopShelfView *)topShelfView { 	
 	BRTopShelfView* topShelf		= [[BRTopShelfView alloc] init];
 	BRImageControl* imageControl	= [topShelf productImage];
-	BRImage* theImage				= [BRImage imageWithPath:[[NSBundle bundleForClass:[TopShelfController class]] pathForResource:@"toolbox" ofType:@"png"]];
-	//BRImage *theImage = [[BRThemeInfo sharedTheme] appleTVIconOOB];
+//	BRImage* theImage				= [BRImage imageWithPath:[[NSBundle bundleForClass:[TopShelfController class]] pathForResource:@"toolbox" ofType:@"png"]];
+	BRImage *theImage = [[BRThemeInfo sharedTheme] appleTVIconOOB];
 	[imageControl setImage:theImage];
 	
 	return topShelf;
 }
+ 
 
 @end

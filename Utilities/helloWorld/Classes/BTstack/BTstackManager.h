@@ -34,6 +34,9 @@
 #import <Foundation/Foundation.h>
 #import <stdint.h>
 #import "btstack.h"
+#import "utils.h"
+#import "BTDevice.h"
+
 
 #define PREFS_REMOTE_NAME  @"RemoteName"
 #define PREFS_LINK_KEY     @"LinkKey"
@@ -83,7 +86,8 @@ typedef enum {
 	NSObject<BTstackManagerDelegate>* _delegate;
 	NSMutableDictionary *deviceInfo;
 	NSMutableArray *discoveredDevices;
-	NSMutableSet *listeners;
+    NSMutableSet *listeners;
+
 	BOOL connectedToDaemon;
 	ManagerState state;
 	DiscoveryState discoveryState;
@@ -135,6 +139,8 @@ typedef enum {
 @property (nonatomic, assign) NSObject<BTstackManagerDelegate>* delegate;
 @property (nonatomic, retain) NSMutableDictionary *deviceInfo;
 @property (nonatomic, retain) NSMutableArray *discoveredDevices;
+
+//@property (nonatomic, retain) NSMutableArray *listeners;
 @property (nonatomic, retain) NSMutableSet *listeners;
 @end
 

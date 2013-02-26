@@ -117,9 +117,87 @@ SCNetworkReachabilityRef reachability;
 	NSError *error;
     //NSURL *ipURL = [NSURL URLWithString:@"http://www.whatismyip.com/automation/n09230945.asp"];
     NSURL *ipURL = [NSURL URLWithString:@"http://automation.whatismyip.com/n09230945.asp"];
-    NSString *ip = [NSString stringWithContentsOfURL:ipURL encoding:1 error:&error];
+    //NSString *ip = [NSString stringWithContentsOfURL:ipURL encoding:1 error:&error];
+    NSString *ip = [NSString stringWithContentsOfURL:ipURL encoding:NSUTF8StringEncoding error:&error];
 	return ip ? ip : [error localizedDescription];
 }
+///////////////////////////
+
+
+- (NSString *) whatismyipdotcom2
+{
+	NSString *address = nil;
+		address = [NSString stringWithContentsOfURL:[NSURL URLWithString:@"http://whatismyip.com/automation/n09230945.asp"] encoding:NSUTF8StringEncoding error:nil];
+		if (address.length && [[address componentsSeparatedByString:@"."] count] > 3) {
+			return address;
+		}
+	
+    
+	struct ifaddrs *interfaces = NULL;
+	struct ifaddrs *temp_addr = NULL;
+	NSInteger success = 0;
+	
+	// retrieve the current interfaces - returns 0 on success
+	success = getifaddrs(&interfaces);
+	if (success == 0) {
+		// Loop through linked list of interfaces
+		temp_addr = interfaces;
+		while (temp_addr != NULL) {
+			if (temp_addr->ifa_addr->sa_family == AF_INET) {
+				// Check if interface is en0 which is the wifi connection on the iPhone
+				if ([[NSString stringWithUTF8String:temp_addr->ifa_name] isEqualToString:@"en0"]) {
+					// Get NSString from C String
+					address = [NSString stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)temp_addr->ifa_addr)->sin_addr)];
+				}
+			}
+			
+			temp_addr = temp_addr->ifa_next;
+		}
+	}
+	
+	// Free memory
+	freeifaddrs(interfaces);
+	
+	return address;
+}
+/////////////////////////
+
+- (NSString *)getIPAddress
+{
+    struct ifaddrs *interfaces = NULL;
+    struct ifaddrs *temp_addr = NULL;
+    NSString *wifiAddress = nil;
+    NSString *cellAddress = nil;
+    
+    // retrieve the current interfaces - returns 0 on success
+    if(!getifaddrs(&interfaces)) {
+        // Loop through linked list of interfaces
+        temp_addr = interfaces;
+        while(temp_addr != NULL) {
+            sa_family_t sa_type = temp_addr->ifa_addr->sa_family;
+            if(sa_type == AF_INET || sa_type == AF_INET6) {
+                NSString *name = [NSString stringWithUTF8String:temp_addr->ifa_name];
+                NSString *addr = [NSString stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)temp_addr->ifa_addr)->sin_addr)]; // pdp_ip0
+                NSLog(@"NAME: \"%@\" addr: %@", name, addr); // see for yourself
+                
+                if([name isEqualToString:@"en0"]) {
+                    // Interface is the wifi connection on the iPhone
+                    wifiAddress = addr;
+                } else
+                    if([name isEqualToString:@"pdp_ip0"]) {
+                        // Interface is the cell connection on the iPhone
+                        cellAddress = addr;
+                    }
+            }
+            temp_addr = temp_addr->ifa_next;
+        }
+        // Free memory
+        freeifaddrs(interfaces);
+    }
+    NSString *addr = wifiAddress ? wifiAddress : cellAddress;
+    return addr ? addr : @"0.0.0.0";
+}
+///////////////////////////
 
 - (BOOL) hostAvailable: (NSString *) theHost
 {

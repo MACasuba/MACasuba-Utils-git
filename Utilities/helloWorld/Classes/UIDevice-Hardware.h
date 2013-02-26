@@ -37,7 +37,9 @@
 #define IPAD_3G_NAMESTRING @"iPad 3G"
 #define IPAD_UNKNOWN_NAMESTRING @"Unknown iPad"
 
-#define APPLETV_2G_NAMESTRING @"Apple TV 2G"
+#define APPLETV_2G_NAMESTRING @"Apple A4"
+#define APPLETV_3G_NAMESTRING @"Apple A5"
+
 #define APPLETV_UNKNOWN_NAMESTRING @"Unknown Apple TV"
 
 #define IOS_FAMILY_UNKNOWN_DEVICE @"Unknown iOS device"
@@ -85,45 +87,52 @@ typedef enum {
 - (NSUInteger) platformType;
 - (NSString *) platformString;
 
-- (NSUInteger) cpuFrequency;
-- (NSUInteger) busFrequency;
-- (NSUInteger) totalMemory;
-- (NSUInteger) userMemory;
-- (NSUInteger) imhoMemory; //test werkt
-
-- (NSUInteger) maxSocketBufferSize;
-
 - (NSNumber *) totalDiskSpace;
+- (NSNumber *) freeDiskSpacePct;
 - (NSNumber *) freeDiskSpace;
 
-- (NSUInteger) userPOSIX; //test werkt 
-- (NSUInteger) kernBOOT; //test werkt
-
-- (NSString *) kernBOOTdata; // test
-
-- (NSDate*)startTime;
-- (NSString*)startTimeAsFormattedDateTime;
+- (NSDate *) startTime;
+- (NSString *)startTimeAsFormattedDateTime;
 
 - (NSString *) macaddressW;
 - (NSString *) macaddress;
 
-// test data and os disk space
 - (NSNumber *) tempTotalDiskSpace;
 - (NSNumber *) tempFreeDiskSpace;
+- (NSNumber *) pctFreeDiskSpace;
 
-- (NSNumber *) rootTotalDiskSpace;
-- (NSNumber *) rootFreeDiskSpace;
+- (NSNumber *) tempTotalDiskSpaceVar;
+- (NSNumber *) tempFreeDiskSpaceVar;
+- (NSNumber *) pctFreeDiskSpaceVar;
 
-- (NSNumber *) fileSize;
-- (NSString *) ownerAccountName;
-- (NSString *) ownerGroupAccountName;
+- (NSNumber *) devFreeDiskSpace;
+- (NSNumber *) devTotalDiskSpace;
+
++(float)getTotalDiskSpaceInBytes;
+- (NSString *) getCachesDirSizeInBytes;
 
 - (NSNumber *) systemNumber;
 - (NSNumber *) systemNodes;
 - (NSNumber *) freeNodes;
+- (NSNumber *) systemSize;
 
-- (NSString*) bluetoothx; 
-- (NSString*) bluetoothy; 
+- (NSUInteger) logSize;
+- (NSString *)prettyBytesLogSize;
+
+
+- (NSString *) accountid;
+- (NSString *) accountname;
+- (NSNumber *) accountidgroup;
+- (NSNumber *) accountnamegroup;
+
+- (NSString *) cachesSize1;
+- (NSString *) cachesSize;
+
+//- (NSString *) bluetoothx;
+- (NSString *) bluetoothy;
+
+//convert kb mb gb
+- (id)transformedFileSizeValue:(id)value;
 
 
 @end

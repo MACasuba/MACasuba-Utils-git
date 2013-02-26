@@ -11,10 +11,12 @@
 //#import "ApplianceConfig.h"
 #import "BRImageManager.h"
 
+#import "LogMainMenu.h"
 
 #import "UIDevice-Hardware.h"
 #import "UIDevice-Reachability.h"
 #import "UIDevice-Uptime.h"
+#import "UIDevice-KERN.h"
 
 #include <Foundation/Foundation.h>
 
@@ -50,6 +52,14 @@
 #import <SystemConfiguration/SystemConfiguration.h>
 
 
+//to get the divider working
+#import <BackRow/BRLocalizedStringManager.h>
+#define BRLocalizedString(key, comment) \
+[BRLocalizedStringManager appliance:self localizedStringForKey:(key) inFile:nil]
+#define BRLocalizedStringFromTable(key, table, comment) \
+[BRLocalizedStringManager appliance:self localizedStringForKey:(key) inFile:(table)]
+
+
 #if !defined(IFT_ETHER)
 #define IFT_ETHER 0x6
 #endif
@@ -62,133 +72,76 @@
 @implementation   MemoryMainMenu
 
 
+
 - (id)init
 
 {
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	
-	BOOL   success;
-	struct ifaddrs *addrs;
-	const struct ifaddrs *cursor;
-	const struct if_data *networkStatisc; 
-	//char buf[64];
-	
-	NSString *name=[[[NSString alloc]init]autorelease];
-	
-	success = getifaddrs(&addrs) == 0;
-	if (success) 
-	{
-		cursor = addrs;
-		while (cursor != NULL) 
-		{
-			name=[NSString stringWithFormat:@"%s",cursor->ifa_name];
-			//NSLog(@"ifa_name %s == %@\n", cursor->ifa_name,name);
-			// names of interfaces: en0 is WiFi ,pdp_ip0 is WWAN 
-			
-			if (cursor->ifa_addr->sa_family == AF_LINK) 
-			{
-				if ([name hasPrefix:@"en"]) 
-				{
-					networkStatisc = (const struct if_data *) cursor->ifa_data;
-					
-				}
-				
-				if ([name hasPrefix:@"pdp_ip"]) 
-				{
-					networkStatisc = (const struct if_data *) cursor->ifa_data;
-					
-				} 
-			}
-			
-			cursor = cursor->ifa_next;
-		}
-		
-		freeifaddrs(addrs);
-	}       
-	
-	NSString *address = @"error"; 
-	struct ifaddrs *interfaces = NULL; 
-	struct ifaddrs *temp_addr = NULL; int success1 = 0; 
-	// retrieve the current interfaces - returns 0 on success 
-	success1 = getifaddrs(&interfaces); 
-	if (success1 == 0) { 
-		// Loop through linked list of interfaces 
-		temp_addr = interfaces; 
-		while(temp_addr != NULL) 
-		{ 
-			if(temp_addr->ifa_addr->sa_family == AF_INET) 
-			{
-				// Check if interface is en0 which is the wifi connection on the iPhone
-				if([[NSString stringWithUTF8String:temp_addr->ifa_name] isEqualToString:@"en1"]) 
-				{ 
-					// Get NSString from C String 
-					address = [NSString stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)temp_addr->ifa_addr)->sin_addr)]; 
-				}
-			} temp_addr = temp_addr->ifa_next; } 
-	} 
-	
-	
 	
 	self = [super init];
 	if (self)
 	{
 		// Initialization code here.
 		[self setListTitle:MEMORY_CATEGORY_NAME];
-		
 		BRImage *sp = [[BRThemeInfo sharedTheme] gearImage];		
 		[self setListIcon:sp horizontalOffset:1.0 kerningFactor:1.0];
+        
 		
 		_names = [[NSMutableArray alloc] init];
-		
-		//let op voor output %d of %@
-		
-		
-		//[_names addObject:[NSNumber numberWithInt:getifaddrs(&addrs)]];
-		//[_names addObject: [NSString stringWithFormat: @"User mem: %@", [[UIDevice currentDevice] userMemory]]];
-		//[_names addObject:[NSNumber numberWithBool:[[UIDevice currentDevice] activeWLAN]]];
-		//[_names addObject: [NSString stringWithFormat: @"uptime: %d", [[UIDevice currentDevice] uptime]]];//werkt niet in een UIDevice omgeving
-
 		if ([[UIDevice currentDevice] networkAvailable])//begrijp niet wat if, de Erica code nog eens nakijken
+		//[_names addObject:@"**** iOS filesystem '/private/var' ****"];	//100
+		[_names addObject: [NSString stringWithFormat: @"System Total		: %@", [[UIDevice currentDevice] totalDiskSpace]]];//101
+		[_names addObject: [NSString stringWithFormat: @"System Free		: %@", [[UIDevice currentDevice] freeDiskSpace]]];//102
+		[_names addObject: [NSString stringWithFormat: @"/dev/disk0s1s2  %@", [[UIDevice currentDevice] freeDiskSpacePct]]];//103
+		//[_names addObject:@"**** User filesystem '/'    ****"];	//104
+		[_names addObject: [NSString stringWithFormat: @"User total: %@", [[UIDevice currentDevice] tempTotalDiskSpace]]];//105
+		[_names addObject: [NSString stringWithFormat: @"User free : %@", [[UIDevice currentDevice] tempFreeDiskSpace]]];//106
+		[_names addObject: [NSString stringWithFormat: @"/dev/disk0s1s1  %@", [[UIDevice currentDevice] pctFreeDiskSpace]]];//107
+		//[_names addObject:@"**** Dev 'devfs'    ****"];	//104
+        [_names addObject: [NSString stringWithFormat: @"Total devfs		: %@", [[UIDevice currentDevice] devTotalDiskSpace]]];
+        [_names addObject: [NSString stringWithFormat: @"Free  devfs		: %@", [[UIDevice currentDevice] devFreeDiskSpace]]];
+        
+      //  [_names addObject:  [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"\n\n %3.0u MB",[[UIDevice currentDevice] logSize] / 1048576]]];
 
-		//[_names addObject: [NSString stringWithFormat: @"Free disk   : %d", [[UIDevice currentDevice] freeDiskSpace]]];
-		[_names addObject: [NSString stringWithFormat: @"Free disk pct  : %@", [[UIDevice currentDevice] freeDiskSpace]]];
-		
-		//[_names addObject: [NSString stringWithFormat: @"Total disk  : %d", [[UIDevice currentDevice] totalDiskSpace]]];
-		[_names addObject: [NSString stringWithFormat: @"T : %@", [[UIDevice currentDevice] totalDiskSpace]]];
-		
-		[_names addObject: [NSString stringWithFormat: @"Free disk tmp: %d", [[UIDevice currentDevice] tempFreeDiskSpace]]];
-		[_names addObject: [NSString stringWithFormat: @"Total disktmp: %d", [[UIDevice currentDevice] tempTotalDiskSpace]]];
-		
-		[_names addObject: [NSString stringWithFormat: @"File size : %u", [[UIDevice currentDevice] fileSize]]];
-		
-		[_names addObject: [NSString stringWithFormat: @"systemNumber: %d", [[UIDevice currentDevice] systemNumber]]];
-		[_names addObject: [NSString stringWithFormat: @"systemNodes: %d", [[UIDevice currentDevice] systemNodes]]];
-		
-		[_names addObject: [NSString stringWithFormat: @"freeNodes: %d", [[UIDevice currentDevice] freeNodes]]];
-		
-		//NSLog(@"free disk space: %dGB", (int)(freeSpace / 1073741824));
-		
-		
-		[_names addObject: [NSString stringWithFormat: @"Total mem MB: %d", [[UIDevice currentDevice] totalMemory]]];	 
-		[_names addObject: [NSString stringWithFormat: @"Free mem MB : %d", [[UIDevice currentDevice] userMemory]]];
-		[_names addObject: [NSString stringWithFormat: @"imhoMmory_MB: %d", [[UIDevice currentDevice] imhoMemory]]];//werkt max memory in kbytes
-		[_names addObject: [NSString stringWithFormat: @"Buf size : %d", [[UIDevice currentDevice] maxSocketBufferSize]]];
-		
-		//test value
-		[_names addObject:[NSString stringWithFormat:@"%d",cursor]];//werkt echter geeft (null)
-		
-		//[_names addObject:@"test"]; // geeft de tekst test
-		[[self list] setDatasource:self];
+        [_names addObject:  [NSString stringWithFormat:@"syslog size: %@", [NSString stringWithFormat:@"\n\n %3@",[[UIDevice currentDevice] prettyBytesLogSize]] ]];
+
+        
+		[_names addObject: [NSString stringWithFormat: @"caches rentals: %@", [[UIDevice currentDevice] cachesSize]]];//110
+		[_names addObject: [NSString stringWithFormat: @"caches other  : %@", [[UIDevice currentDevice] cachesSize1]]];//111
+	//	[_names addObject: [NSString stringWithFormat: @"caches system calc  : %@", [[UIDevice currentDevice] getCachesDirSizeInBytes]]];//test for check of total caches size function
+		[_names addObject: [NSString stringWithFormat: @"Maximum RAM in MB	: %d", [[UIDevice currentDevice] totalMemory]]];//112 
+		[_names addObject: [NSString stringWithFormat: @"Free User RAM in MB: %d", [[UIDevice currentDevice] userMemory]]];//113
+		[_names addObject: [NSString stringWithFormat: @"Standard RAM in MB	: %d", [[UIDevice currentDevice] imhoMemory]]];//114
+		[_names addObject: [NSString stringWithFormat: @"Buffer  size		: %d", [[UIDevice currentDevice] maxSocketBufferSize]]];//115
+
+        //create dividers between the sections
+        
+        [[self list] setDatasource:self];
+        [[self list] addDividerAtIndex:0 withLabel:BRLocalizedString(@"iOS filesystem '/private/var'",@"Featured menu item divider in software section")];
+        [[self list] addDividerAtIndex:3 withLabel: @"User filesystem '/'"];
+		[[self list] addDividerAtIndex:6 withLabel: @"Dev filesystem '/dev'"];
+        
+        //if the log file exceeds 50 MB you will be able to flush the logfile
+        if ([[UIDevice currentDevice] logSize] >=  50000000)
+        {
+            [[self list] addDividerAtIndex:8 withLabel: @"Please rotate your syslog !"];
+        }
+        //in case the syslog is smaller then 50MB it will just show te usage
+        if ([[UIDevice currentDevice] logSize] <  50000000)
+        {
+            [[self list] addDividerAtIndex:8 withLabel: @"your used cashes space"];
+        }
+
+        [[self list] addDividerAtIndex:11 withLabel: @"RAM"];
+		//[[self list] setDatasource:self]; //turned off to get deviders to work
+        
 		return self;
 	}
 	
 	return self;
-	
-	// Free memory 
-	freeifaddrs(interfaces); 
-	return address; 
-	
-	
+
+
+    //is dit nodig?
 	[pool release];
 	return 0;
 	
@@ -203,38 +156,63 @@
 - (id)previewControlForItem:(long)item {
 	BRImage* previewImage = nil;
 	
-	switch (item) {
-		case 0://build
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"30" ofType:@"png"]];
+	switch (item)
+    {
+		case 0://system total
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"100" ofType:@"png"]];
 			break;
-		case 1://product
+		case 1://system free
 			//previewImage = [[BRThemeInfo sharedTheme] appleTVIconOOB];
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"31" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"102" ofType:@"png"]];
 			break;
-		case 2://ATV
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"32" ofType:@"png"]];
+		case 2://system pct free
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"102" ofType:@"png"]];
 			break;
-		case 3://Machine
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"33" ofType:@"png"]];
+		case 3://user total
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"100" ofType:@"png"]];
 			break;
-		case 4://ID
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"34" ofType:@"png"]];
+		case 4://user free
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"102" ofType:@"png"]];
 			break;
-		case 5://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"35" ofType:@"png"]];			
-			break;		
-		case 6://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"36" ofType:@"png"]];			
+		case 5://user pct free
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"102" ofType:@"png"]];			
+			break;
+		case 6://devfs total
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"100" ofType:@"png"]];
+			break;
+		case 7://devfs free
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"102" ofType:@"png"]];
+			break;
+		case 8://logfile
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"108" ofType:@"png"]];
+			break;
+		case 9://cache rental
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"110" ofType:@"png"]];			
+			break;
+		case 10://cache other
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"111" ofType:@"png"]];
 			break;	
-		case 7://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"37" ofType:@"png"]];			
+		case 11://max ram
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"112" ofType:@"png"]];
+			break;	
+		case 12://free ram
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"113" ofType:@"png"]];
+			break;	
+		case 13://std ram
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"114" ofType:@"png"]];
+			break;	
+		case 14://buff size
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"115" ofType:@"png"]];
+			break;	
+		case 15://
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"113" ofType:@"png"]];			
+			break;	
+		case 16://
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"114" ofType:@"png"]];			
+			break;	
+		case 17://
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"115" ofType:@"png"]];			
 			break;
-		case 8://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"38" ofType:@"png"]];			
-			break;	
-		case 9://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[MemoryMainMenu class]] pathForResource:@"39" ofType:@"png"]];			
-			break;	
 	}
 	
 	BRImageAndSyncingPreviewController *controller = [[BRImageAndSyncingPreviewController alloc] init];
@@ -243,19 +221,50 @@
 	return controller;
 }
 
-- (void)itemSelected:(long)selected;{ 
-	
+
+
+- (void)itemSelected:(long)selected;{
+    
 	NSDictionary *currentObject = [_names objectAtIndex:selected];
 	NSLog(@"%s (%d) item selected: %@", __PRETTY_FUNCTION__, __LINE__, currentObject);
-	
-	if (selected == 0) {
-        //int result = system("");
-		system("echo reboot");//test 
+	   
+	if (selected == 0) 
+    {
+        //
     }
-	else if (selected == 1) {
-		//int result = system("hostname > File.txt");
-    }
+    
+    /*
+     else if (selected == 6)
+     {
+         PowerMainMenu *menuController;
+         menuController = [[PowerMainMenu alloc] init];
+         [[self stack] pushController:menuController];
+         [menuController autorelease];
+     }
+    
+    
+
+     else if (selected == 7)
+     {
+         PowerMainMenu* rename = [[PowerMainMenu alloc] init];
+         [[self stack] pushController:rename];
+         [rename autorelease];
+     }
+    
+    */
+    
+    else if (selected == 8) // ga naar het logfile menu
+        {
+            LogMainMenu *menuController;
+            menuController = [[LogMainMenu alloc] init];
+            [[self stack] pushController:menuController];
+            [menuController autorelease];
+        }
+
+
 }
+
+
 
 - (float)heightForRow:(long)row {
 	return 0.0f;
@@ -271,23 +280,30 @@
 		return nil;
 	
 	BRMenuItem* menuItem	= [[BRMenuItem alloc] init];
+    
 	NSString* menuTitle		= [_names objectAtIndex:row];
 	
 	[menuItem setText:menuTitle withAttributes:[[BRThemeInfo sharedTheme] menuItemTextAttributes]];
+    
 	
 	switch (row) {
 			
-		case 0:
-			[menuItem addAccessoryOfType:0];
-			break;
-			
-		case 1: 
-			[menuItem addAccessoryOfType:0];
-			break;
-			
 		default:
-			[menuItem addAccessoryOfType:0];
+			//[menuItem addAccessoryOfType:0];
+            [menuItem setText:menuTitle withAttributes:[[BRThemeInfo sharedTheme] smallHeightListDividerLabelAttributes]];
 			break;
+            
+        case 8:
+            if ([[UIDevice currentDevice] logSize] >=  50000000)
+        {
+            [menuItem addAccessoryOfType:3]; //display an arrow behind the syslog size line
+            //ToDo is that a key press will get you to a new sub menu
+            //flush of view the syslog
+        }
+            
+        {
+            [menuItem addAccessoryOfType:7];
+        }
 	}
 	
 	return menuItem;

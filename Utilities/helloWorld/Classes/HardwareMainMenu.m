@@ -8,13 +8,15 @@
 
 #import "HardwareMainMenu.h"
 #import "ApplianceConfig.h"
-//#import "ApplianceConfig.h"
+
 #import "BRImageManager.h"
 
+//#import "BTDevice.h"
 
 #import "UIDevice-Hardware.h"
 #import "UIDevice-Reachability.h"
 #import "UIDevice-Uptime.h"
+#import "UIDevice-KERN.h"
 
 #include <Foundation/Foundation.h>
 
@@ -72,6 +74,8 @@
 		const struct ifaddrs *cursor;
 		const struct if_data *networkStatisc; 
 		//char buf[64];
+		const NSString *SerialNumber_ = nil;
+		const NSString *ChipID_ = nil;
 		
 		NSString *name=[[[NSString alloc]init]autorelease];
 	
@@ -127,6 +131,43 @@
 			} temp_addr = temp_addr->ifa_next; } 
 		} 
 	
+	////begin tevoeging
+	
+	if (CFMutableDictionaryRef dict =
+		IOServiceMatching("IOPlatformExpertDevice")) 
+		
+	{
+        if (io_service_t service =
+			IOServiceGetMatchingService(kIOMasterPortDefault, dict)) {
+            if (CFTypeRef serial =
+				IORegistryEntryCreateCFProperty(service,
+												CFSTR(kIOPlatformSerialNumberKey), kCFAllocatorDefault, 0)) {
+					SerialNumber_ = [NSString stringWithString:(NSString
+																*)serial];
+					CFRelease(serial);
+				}
+			
+            if (CFTypeRef ecid =
+				IORegistryEntrySearchCFProperty(service, kIODeviceTreePlane,
+												CFSTR("unique-chip-id"), kCFAllocatorDefault,
+												kIORegistryIterateRecursively)) {
+					NSData *data((NSData *) ecid);
+					size_t length([data length]);
+					uint8_t bytes[length];
+					[data getBytes:bytes];
+					char string[length * 2 + 1];
+					for (size_t i(0); i != length; ++i)
+						sprintf(string + i * 2, "%.2X", bytes[length - i -
+															  1]);
+					ChipID_ = [NSString stringWithUTF8String:string];
+					CFRelease(ecid);
+				}
+			
+            IOObjectRelease(service);
+        }
+    }
+	
+	//eind toevoeging
 
 		
 	self = [super init];
@@ -140,82 +181,50 @@
 		
 		_names = [[NSMutableArray alloc] init];
 		
-		//let op voor output %d of %@
+		if ([[UIDevice currentDevice] networkAvailable])//begrijp niet wat if, de Erica code nog eens nakijken
+
+		[_names addObject: [NSString stringWithFormat: @"S/N	: %@", SerialNumber_]];//300
+		[_names addObject: [NSString stringWithFormat: @"Chip ID: %@", ChipID_]];//301	
+
+		[_names addObject: [NSString stringWithFormat: @"Platform	  : %@", [[UIDevice currentDevice] platform]]];//302
+		[_names addObject: [NSString stringWithFormat: @"Processor	  : %@", [[UIDevice currentDevice] platformString]]];//303
+		[_names addObject: [NSString stringWithFormat: @"Model		  : %@",[[UIDevice currentDevice] hwmodel]]];//304
+
+		[_names addObject: [NSString stringWithFormat: @"Bus freq MHz : %d", [[UIDevice currentDevice] busFrequency ]]];//305
+		[_names addObject: [NSString stringWithFormat: @"CPU freq     : %d", [[UIDevice currentDevice] cpuFrequency]]];//306
+		[_names addObject: [NSString stringWithFormat: @"Clock freq hz: %u", [[UIDevice currentDevice] printClockInfo2]]];//307
+
+		[_names addObject:@"CPU speed: 1 GHz"];//308
+		[_names addObject:@"Ethernet : 1 (RJ-45)"];//309
+		[_names addObject:@"USB		 : 1 (Micro-USB)"];//310
+		[_names addObject:@"Video	 : 1 (HDMI)"]; //311
 		
-		
-		//[_names addObject:[NSNumber numberWithInt:getifaddrs(&addrs)]];
-		//[_names addObject: [NSString stringWithFormat: @"User mem: %@", [[UIDevice currentDevice] userMemory]]];
-		//[_names addObject:[NSNumber numberWithBool:[[UIDevice currentDevice] activeWLAN]]];
-		//[_names addObject: [NSString stringWithFormat: @"uptime: %d", [[UIDevice currentDevice] uptime]]];//werkt niet in een UIDevice omgeving
-		//[_names addObject:[[UIDevice currentDevice] uptimeString]];//werkt niet in een UIDevice omgeving
-		//[_names addObject:[[UIDevice currentDevice] startTimeAsFormattedDateTime]];//werkt geeft datum van vandaag
-		//hoe krijg ik data uit array??
-		//[_names addObject:[[UIDevice currentDevice] runningProcesses]];//nog een keer uitzoeken is een Array
-		//[_names addObject: [NSString stringWithFormat: @"imhoMmory_MB: %d", [[UIDevice currentDevice] imhoMemory]]];//werkt max memory in kbytes
-		//[_names addObject: [NSString stringWithFormat: @"userPOSIX_: %d", [[UIDevice currentDevice] userPOSIX]]]; //werkt		
-		//[_names addObject: [NSString stringWithFormat: @"kernBOOT_: %d", [[UIDevice currentDevice] kernBOOT]]];	//werkt geeft een nummer (als datum)
-		//[_names addObject: [[UIDevice currentDevice] kernBOOTdata]];	//werkt geeft kernBoot als datum Jun26 1995
-		//[_names addObject:[NSString stringWithFormat: @"LAN port : %@", name]];//geeft en1 in decimalen? 208512752	
-		//[_names addObject:name];//geeft en1	
-		//[_names addObject:[NSString stringWithFormat: @"Mac addess: %@", [[UIDevice currentDevice] macaddress]]];
-		//[_names addObject:[NSString stringWithFormat:@"IP address ATV: %@",address]];//geeft ip adres
-		[_names addObject:[NSString stringWithFormat: @"Platform_: %@", [[UIDevice currentDevice] platform]]];
-		[_names addObject:[NSString stringWithFormat: @"Platform str: %@", [[UIDevice currentDevice] platformString]]];
-		//[_names addObject:[NSString stringWithFormat: @"hostname : %@",[[UIDevice currentDevice] hostname]]];
-		[_names addObject:[NSString stringWithFormat: @"hwmodel_ : %@",[[UIDevice currentDevice] hwmodel]]];
-	//	[_names addObject:[[UIDevice currentDevice] localIPAddress]];
-		//[_names addObject:[NSString stringWithFormat: @"Google IP: %@",[[UIDevice currentDevice] getIPAddressForHost:@"www.google.com"]]];
-		//[_names addObject:[NSString stringWithFormat: @"localhost IP: %@",[[UIDevice currentDevice] getIPAddressForHost:@"localhost"]]];
-		
+		//[_names addObject: [NSString stringWithFormat: @"Clock freq  : %@", [[UIDevice currentDevice] clockFrequency]]];
 
-		[_names addObject:[NSString stringWithFormat: @"BT_: %@",  [[UIDevice currentDevice] bluetoothx   ] ]];
-		[_names addObject:[NSString stringWithFormat: @"BT_: %@",  [[UIDevice currentDevice] bluetoothy   ] ]];
-		[_names addObject:[NSString stringWithFormat: @"BT_: %d",  [[UIDevice currentDevice] bluetoothx   ] ]];
-		[_names addObject:[NSString stringWithFormat: @"BT_: %d",  [[UIDevice currentDevice] bluetoothy   ] ]];
-					
-		
-		//if ([[UIDevice currentDevice] networkAvailable])//begrijp niet wat if, de Erica code nog eens nakijken
-		//[_names addObject:[NSString stringWithFormat: @"ISP's IP: %@",[[UIDevice currentDevice] whatismyipdotcom]]];
-		[_names addObject: [NSString stringWithFormat: @"Bus freq    : %d", [[UIDevice currentDevice] busFrequency]]];
-		[_names addObject: [NSString stringWithFormat: @"CPU freq    : %d", [[UIDevice currentDevice] cpuFrequency]]];
-		//[_names addObject: [NSString stringWithFormat: @"Free disk   : %d", [[UIDevice currentDevice] freeDiskSpace]]];
-		//[_names addObject: [NSString stringWithFormat: @"Total disk  : %d", [[UIDevice currentDevice] totalDiskSpace]]];
+		[_names addObject: [NSString stringWithFormat: @"systemNumber : %@", [[UIDevice currentDevice] systemNumber]]];//312
+		//[_names addObject: [NSString stringWithFormat: @"systemNodes : %d", [[UIDevice currentDevice] systemNodes]]];
+		//[_names addObject: [NSString stringWithFormat: @"freeNodes   : %d", [[UIDevice currentDevice] freeNodes]]];
 
-		//[_names addObject: [NSString stringWithFormat: @"Free disk tmp: %d", [[UIDevice currentDevice] tempFreeDiskSpace]]];
-		//[_names addObject: [NSString stringWithFormat: @"Total disktmp: %d", [[UIDevice currentDevice] tempTotalDiskSpace]]];
-
-		//[_names addObject: [NSString stringWithFormat: @"File size : %u", [[UIDevice currentDevice] fileSize]]];
-
-		[_names addObject: [NSString stringWithFormat: @"account owner : %@", [[UIDevice currentDevice] ownerAccountName]]];
-		[_names addObject: [NSString stringWithFormat: @"account group : %@", [[UIDevice currentDevice] ownerGroupAccountName]]];
-
-		[_names addObject: [NSString stringWithFormat: @"systemNumber: %d", [[UIDevice currentDevice] systemNumber]]];
-		[_names addObject: [NSString stringWithFormat: @"systemNodes: %d", [[UIDevice currentDevice] systemNodes]]];
-		[_names addObject: [NSString stringWithFormat: @"freeNodes: %d", [[UIDevice currentDevice] freeNodes]]];
-		
-		//NSLog(@"free disk space: %dGB", (int)(freeSpace / 1073741824));
-			
-		//[_names addObject: [NSString stringWithFormat: @"Total mem MB: %d", [[UIDevice currentDevice] totalMemory]]];	 
-		//[_names addObject: [NSString stringWithFormat: @"Free mem MB : %d", [[UIDevice currentDevice] userMemory]]];
-		//[_names addObject: [NSString stringWithFormat: @"imhoMmory_MB: %d", [[UIDevice currentDevice] imhoMemory]]];//werkt max memory in kbytes
-		//[_names addObject: [NSString stringWithFormat: @"Buf size : %d", [[UIDevice currentDevice] maxSocketBufferSize]]];
-		//[_names addObject:[NSString stringWithFormat:@"%@",cursor]];//werkt echter geeft (null)
-
-		//[_names addObject:@"test"]; // geeft de tekst test
 		[[self list] setDatasource:self];
 		return self;
 	}
 		
 	return self;
 
-	// Free memory 
+	// Free memory
+    
+    //imho
+    /*
+    
 	freeifaddrs(interfaces); 
 	return address; 
-
+*/
 	
 	[pool release];
 	return 0;
 
+     
+     
 }
 
 
@@ -229,35 +238,44 @@
 	
 	switch (item) {
 		case 0://build
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"30" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"300" ofType:@"png"]];
 			break;
 		case 1://product
 			//previewImage = [[BRThemeInfo sharedTheme] appleTVIconOOB];
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"31" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"301" ofType:@"png"]];
 			break;
 		case 2://ATV
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"32" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"302" ofType:@"png"]];
 			break;
 		case 3://Machine
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"33" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"303" ofType:@"png"]];
 			break;
 		case 4://ID
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"34" ofType:@"png"]];
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"304" ofType:@"png"]];
 			break;
 		case 5://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"35" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"305" ofType:@"png"]];			
 			break;		
 		case 6://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"36" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"306" ofType:@"png"]];			
 			break;	
 		case 7://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"37" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"307" ofType:@"png"]];			
 			break;
 		case 8://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"38" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"308" ofType:@"png"]];			
 			break;	
 		case 9://system
-			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"39" ofType:@"png"]];			
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"309" ofType:@"png"]];			
+			break;	
+		case 10://system
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"310" ofType:@"png"]];			
+			break;	
+		case 11://system
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"311" ofType:@"png"]];			
+			break;	
+		case 12://system
+			previewImage = [BRImage imageWithPath:[[NSBundle bundleForClass:[HardwareMainMenu class]] pathForResource:@"312" ofType:@"png"]];			
 			break;	
 	}
 	
@@ -301,16 +319,9 @@
 	
 	switch (row) {
 			
-		case 0:
-			[menuItem addAccessoryOfType:0];
-			break;
-			
-		case 1: 
-			[menuItem addAccessoryOfType:0];
-			break;
-			
 		default:
-			[menuItem addAccessoryOfType:0];
+			//[menuItem addAccessoryOfType:0];
+            [menuItem setText:menuTitle withAttributes:[[BRThemeInfo sharedTheme] smallHeightListDividerLabelAttributes]];
 			break;
 	}
 	

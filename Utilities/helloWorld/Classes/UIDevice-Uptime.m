@@ -25,7 +25,7 @@
 
 #include <time.h> //tbv uptime
 #include <errno.h>
-#include <utmpx.h>
+#include <utmpx.h> //tbv last logon
 
 #import "UIDevice-Uptime.h"
 
@@ -46,7 +46,7 @@
 	
 	if (sysctl(mib, 2, &boottime, &len, NULL, 0) == -1) { 
 		perror("sysctl"); 
-		return [NSString stringWithFormat: @"%f", -1]; 
+		return [NSString stringWithFormat: @"%d", -1];
 		//return (NSTimeInterval) -1; 
 
 	} 
@@ -67,8 +67,9 @@
 	//the remainder is seconds.
     int seconds = m.rem;
 
-	return [NSString stringWithFormat:@"uptime: %02li:%02li:%02li", hours, minutes, seconds];
+	//return [NSString stringWithFormat:@"uptime: %02li:%02li:%%02i, hours, minutes, seconds"];
 
+      return [NSString stringWithFormat:@"%02i:%02i:%02i", hours, minutes, seconds];
 
 } 
 
@@ -86,7 +87,7 @@
 	
 	if (sysctl(mib, 2, &boottime, &len, NULL, 0) == -1) { 
 		perror("sysctl"); 
-		return [NSString stringWithFormat: @"%f", -1]; 
+		return [NSString stringWithFormat: @"%d", -1];
 		//return (NSTimeInterval) -1; 
 		
 	} 
@@ -109,31 +110,34 @@
 	
 	//NSLog(@"Break down: %dmin %dhours %ddays %dmoths",[breakdownInfo minute], [breakdownInfo hour], [breakdownInfo day], [breakdownInfo month]);
 	
-	return [NSString stringWithFormat:@"Last boot was: %dmin %dhours %ddays %dmoths",[breakdownInfo minute], [breakdownInfo hour], [breakdownInfo day], [breakdownInfo month]];
-	
+	//return [NSString stringWithFormat:@"Last boot was: %dmin %dhours %ddays %dmoths",[breakdownInfo minute], [breakdownInfo hour], [breakdownInfo day], [breakdownInfo month]];
+	return [NSString stringWithFormat:@"Last boot was: %dmonths %ddays %dhours %dmin",[breakdownInfo month], [breakdownInfo day], [breakdownInfo hour], [breakdownInfo minute]];
+
 	[date1 release];
 	[date2 release];
-	
-	
 } 
 
 
-- (NSString*) wtmpATV2 {
+- (void) wtmpATV2 
 
+{
+	
 	struct lastlogx *lastLogin;
 	uid_t myuid = getuid();
 	lastLogin = getlastlogx(myuid,nil);
-	NSDate *dateAtLogon = [NSDate dateWithTimeIntervalSince1970:lastLogin->ll_tv.tv_sec];
-	NSDate *currentDate = [NSDate date];
-	NSTimeInterval timeSinceLogin = [currentDate timeIntervalSinceDate:dateAtLogon];
-	NSLog(@"%1.1f seconds since logon",timeSinceLogin); 
+	
+	//NSDate *dateAtLogon = [NSDate dateWithTimeIntervalSince1970:lastLogin->ll_tv.tv_sec];
+	
+	//NSDate *currentDate = [[NSDate alloc] init];
+	
+	//NSTimeInterval timeSinceLogin = [currentDate timeIntervalSinceDate:dateAtLogon];
+	
+	
+	//NSLog(@"%1.1f seconds since logon",timeSinceLogin); 
+	//return [NSString stringWithFormat:@"%1.1f seconds since logon",timeSinceLogin];
 
 }
 
 
+
 @end
-
-
-
-
-

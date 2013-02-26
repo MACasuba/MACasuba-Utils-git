@@ -25,6 +25,9 @@
 - (NSString *) localWiFiIPAddress;
 - (NSString *) whatismyipdotcom;
 
+- (NSString *) whatismyipdotcom2;
+- (NSString *) getIPAddress;
+
 - (BOOL) hostAvailable: (NSString *) theHost;
 - (BOOL) networkAvailable;
 - (BOOL) activeWLAN;

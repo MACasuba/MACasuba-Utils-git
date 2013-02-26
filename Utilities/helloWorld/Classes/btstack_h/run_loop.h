@@ -38,7 +38,7 @@
 #pragma once
 
 //#include <btstack/linked_list.h>
-#include "linked_list.h">
+#include "linked_list.h"
 
 #include <sys/time.h>
 

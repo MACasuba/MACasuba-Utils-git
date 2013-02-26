@@ -21,8 +21,9 @@
 
 
 
-- (NSString*) uptimeATV2;
-- (NSString*) wtmpATV2 ;
+- (NSString *) uptimeATV2;
+//- (NSString *) timeSinceLogin;
+//- (NSString *) wtmpATV2;
 
 @end
 
